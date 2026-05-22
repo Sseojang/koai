@@ -164,9 +164,14 @@ body{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif
   font-family:'Noto Sans KR',sans-serif}
 .btn-review:hover{border-color:var(--acc2);color:var(--acc2)}
 
-.review-actions{display:flex;gap:.75rem;justify-content:center;margin-top:1.25rem;
-  padding:1.25rem;background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);flex-wrap:wrap}
-.review-actions .btn-restart,.review-actions .btn-review{padding:.7rem 1.5rem;font-size:.875rem}
+.btn-restart-nav{flex:1;padding:.75rem 1.25rem;background:var(--accent);border:none;
+  border-radius:var(--rs);color:#fffaf0;font-size:.875rem;font-weight:600;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .17s;white-space:nowrap}
+.btn-restart-nav:hover{opacity:.88}
+.btn-results-side{width:100%;margin-top:.5rem;padding:.45rem;background:var(--surf2);
+  border:1px solid var(--bord);border-radius:var(--rs);color:var(--text);font-size:.7rem;
+  font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .17s}
+.btn-results-side:hover{border-color:var(--acc2);color:var(--acc2)}
 
 .btn-submit{flex:1;padding:.75rem 1.25rem;background:var(--surf2);border:1.5px solid var(--bord);
   border-radius:var(--rs);color:var(--muted);font-size:.875rem;font-weight:600;
@@ -210,7 +215,7 @@ body{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif
   <div class="hdr">
     <div class="hdr-badge">KOAI 2026 PRACTICE</div>
     <h1>KOAI 2026 예상 기출문제 · 제1회</h1>
-    <p>1~2과목 (중등부) &nbsp;·&nbsp; 선택형 40문항 &nbsp;·&nbsp; 4지선다</p>
+    <p>1~2과목 (중등부) &nbsp;·&nbsp; 선택형 40문항</p>
   </div>
 
   <div class="tabs" id="tabs"></div>
@@ -221,6 +226,7 @@ body{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif
         <span class="prog-title" id="prog-txt">응답 0 / 40</span>
       </div>
       <div id="dots-area"></div>
+      <button class="btn-results-side" id="btn-results-side" onclick="showScore()" style="display:none">결과 보기</button>
     </div>
 
     <div class="main-col">
@@ -242,13 +248,8 @@ body{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif
     <div class="nav">
       <button class="btn btn-ghost" id="btn-prev" onclick="move(-1)">← 이전</button>
       <button class="btn-submit" id="btn-submit" onclick="submitAll()" disabled>제출하기</button>
+      <button class="btn-restart-nav" id="btn-restart-nav" onclick="restartAll()" style="display:none">다시 풀기</button>
       <button class="btn btn-next" id="btn-next" onclick="move(1)">다음 →</button>
-    </div>
-
-    <div class="review-actions" id="review-actions" style="display:none">
-      <button class="btn-restart" onclick="restartAll()">다시 풀기</button>
-      <button class="btn-review" onclick="showScore()">결과 보기</button>
-      <button class="btn-review" id="btn-next-wrong" onclick="nextWrong()">다음 오답 →</button>
     </div>
     </div>
   </div>
@@ -831,29 +832,26 @@ function renderNav(){
   document.getElementById('btn-prev').disabled=cq===0;
   const nb=document.getElementById('btn-next');
 
-  if(submitted&&cq===TOTAL-1){
-    nb.textContent='결과 보기 →';
-    nb.onclick=showScore;
-    nb.disabled=false;
-  } else {
-    nb.textContent='다음 →';
-    nb.onclick=()=>move(1);
-    nb.disabled=cq===TOTAL-1;
-  }
+  nb.textContent='다음 →';
+  nb.onclick=()=>move(1);
+  nb.disabled=cq===TOTAL-1;
 }
 
 /* ─── submit area ─── */
 function renderSubmitArea(){
   const btn=document.getElementById('btn-submit');
-  const reviewBar=document.getElementById('review-actions');
+  const restartBtn=document.getElementById('btn-restart-nav');
+  const resultsBtn=document.getElementById('btn-results-side');
 
   if(submitted){
     btn.style.display='none';
-    reviewBar.style.display='flex';
+    restartBtn.style.display='';
+    resultsBtn.style.display='';
     return;
   }
   btn.style.display='';
-  reviewBar.style.display='none';
+  restartBtn.style.display='none';
+  resultsBtn.style.display='none';
 
   const answered=ST.filter(s=>s.sel!==null).length;
   const remaining=TOTAL-answered;
