@@ -279,7 +279,7 @@ body{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif
 <div id="app">
   <div class="hdr">
     <div class="hdr-badge" id="hdr-badge">KOAI 2026 PRACTICE</div>
-    <h1 id="page-title">KOAI 2026 회차별 기출문제</h1>
+    <h1 id="page-title" >KOAI 2026 회차별 기출문제</h1>
     <p id="page-subtitle">프로그래밍 · 머신러닝 · 데이터 · 사이언스 · 신경망 · 딥러닝</p>
   </div>
 
@@ -294,7 +294,7 @@ body{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif
       <div class="toolbar-actions">
         <button class="btn-small" onclick="showDashboard()">대시보드</button>
         <button class="btn-small" onclick="openRoundMenu()">다른 회차</button>
-        <button class="btn-small primary" onclick="restartAll()">다시 풀기</button>
+        <button class="btn-small primary" onclick="restartAll()">다시 시작</button>
       </div>
     </div>
 
@@ -3285,13 +3285,13 @@ function renderDashboard(){
     const s=states[idx];
     const pct=s.submitted?Math.round(s.ok/s.auto*100):Math.round(s.answered/TOTAL*100);
     const badge=s.submitted?`객관식 ${s.ok}/${s.auto}`:s.answered>0?'진행 중':'시작 전';
-    const action=s.submitted?'결과 보기':s.answered>0?'이어 풀기':'풀기 시작';
-    const desc=s.submitted?`자동채점 정답률 ${pct}% · 서술형 ${s.essay}/5문항 작성`:`객관식 40문항 + 서술형 5문항 · ${s.answered}문항 응답`;
+    const action=s.submitted?'결과 보기':s.answered>0?'이어 풀기':'시작';
+    const desc=s.submitted?`자동채점 정답률 ${pct}% · 서술형 ${s.essay}/5문항 작성`:`45문제 중 ${s.answered}개 풀이`;
     return `<article class="round-card${s.submitted?' done':''}${idx===currentRoundIndex?' active':''}" role="button" tabindex="0" onclick="startRound(${idx})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();startRound(${idx})}">
       <div class="round-head"><span class="round-title">${r.label}</span><span class="round-badge">${badge}</span></div>
       <div class="round-desc">${desc}</div>
       <div class="round-progress"><div class="round-bar"><div class="round-fill" style="width:${pct}%"></div></div><div class="round-meta">${pct}%</div></div>
-      <div class="round-actions"><span class="round-action primary">${action}</span><span class="round-action">45문항</span></div>
+      <div class="round-actions"><span class="round-action primary">${action}</span></div>
     </article>`;
   }).join('');
 }
@@ -3536,10 +3536,10 @@ function showScore(){
     </div>
   </div>
   <div class="score-actions">
-    <button class="btn-restart" onclick="restartAll()">다시 풀기</button>
+    <button class="btn-restart" onclick="restartAll()">다시 시작</button>
     <button class="btn-review" onclick="reviewMode()">틀린 문제 복습</button>
     <button class="btn-dashboard" onclick="showDashboard()">대시보드</button>
-    <button class="btn-next-round" onclick="startRound(${nextIdx})">${ROUNDS[nextIdx].label} 풀기</button>
+    <button class="btn-next-round" onclick="startRound(${nextIdx})">${ROUNDS[nextIdx].label} 시작</button>
   </div>`;
 }
 function restartAll(){
