@@ -1,0 +1,947 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KOAI 2026 예상 기출문제 · 제2회</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f5f1e8;--surf:#fffaf0;--surf2:#f0ebe0;--bord:#d8cfbd;
+  --text:#20201d;--muted:#6e6a60;--accent:#1d6b5f;--acc2:#2a8a7a;
+  --ok:#1c6b3e;--ok-bg:#d8eadc;
+  --no:#a33d2d;--no-bg:#f4d8d2;
+  --sel-bg:#d7ece8;--sel-bord:#1d6b5f;
+  --hint-bg:#fff1c9;--hint-bord:#b7892d;
+  --r:12px;--rs:8px;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  background:
+    linear-gradient(90deg, rgba(32,32,29,.04) 1px, transparent 1px),
+    linear-gradient(rgba(32,32,29,.035) 1px, transparent 1px),
+    var(--bg);
+  background-size:28px 28px;
+  color:var(--text);min-height:100vh;line-height:1.8;font-size:15px}
+
+#app{max-width:820px;margin:0 auto;padding:2rem 1.25rem 6rem}
+
+.hdr{text-align:center;padding:2.5rem 0 2rem;border-bottom:1px solid var(--bord);margin-bottom:2rem}
+.hdr-badge{display:inline-flex;align-items:center;gap:.4rem;font-size:.75rem;font-weight:600;
+  color:var(--acc2);background:rgba(29,107,95,.12);border:1px solid rgba(29,107,95,.3);
+  padding:.3rem .8rem;border-radius:99px;letter-spacing:.05em;margin-bottom:.9rem}
+.hdr h1{font-family:'JetBrains Mono',monospace;font-size:1.45rem;font-weight:600;color:var(--text);margin-bottom:.4rem}
+.hdr p{font-size:.875rem;color:var(--muted)}
+
+.tabs{display:flex;gap:.4rem;margin-bottom:1.5rem;flex-wrap:wrap}
+.tab{flex:1;min-width:70px;padding:.6rem .35rem;background:var(--surf);border:1px solid var(--bord);
+  border-radius:var(--rs);font-size:.78rem;font-weight:500;color:var(--muted);cursor:pointer;
+  text-align:center;transition:all .18s;font-family:'Noto Sans KR',sans-serif;line-height:1.3}
+.tab:hover{border-color:var(--accent);color:var(--acc2)}
+.tab.active{background:var(--accent);border-color:var(--accent);color:#fffaf0;font-weight:700}
+.tab .tab-score{font-family:'JetBrains Mono',monospace;font-size:.7rem;display:block;margin-top:2px;opacity:.7}
+
+#quiz-view{display:flex;gap:1.25rem;align-items:flex-start}
+.main-col{flex:1;min-width:0}
+.prog-area{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);
+  padding:.5rem .6rem;width:160px;flex-shrink:0;position:sticky;top:1rem}
+.prog-top{margin-bottom:.45rem}
+.prog-title{font-size:.68rem;color:var(--muted)}
+.stat-ok{color:var(--ok)} .stat-no{color:var(--no)} .stat-sel{color:var(--acc2)}
+.prog-bar{height:4px;background:var(--surf2);border-radius:99px;overflow:hidden;margin-bottom:.6rem}
+.prog-fill{height:100%;background:linear-gradient(90deg,var(--accent),var(--acc2));
+  border-radius:99px;transition:width .35s ease}
+.sec-label{font-size:.6rem;font-weight:700;color:var(--acc2);margin:5px 0 3px;letter-spacing:.04em}
+.q-dots{display:grid;grid-template-columns:repeat(8,1fr);gap:2px}
+.dot{width:15px;height:15px;border-radius:50%;border:1px solid var(--bord);background:var(--surf2);
+  cursor:pointer;font-size:.45rem;display:flex;align-items:center;justify-content:center;
+  color:var(--muted);transition:all .15s;font-family:'JetBrains Mono',monospace;font-weight:600}
+.dot:hover{border-color:var(--acc2);color:var(--acc2)}
+.dot.cur{border-color:var(--acc2);background:rgba(29,107,95,.15);color:var(--acc2)}
+.dot.sel{border-color:var(--accent);background:var(--sel-bg);color:var(--acc2)}
+.dot.ok{background:var(--ok-bg);border-color:var(--ok);color:var(--ok)}
+.dot.no{background:var(--no-bg);border-color:var(--no);color:var(--no)}
+
+.q-card{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);
+  padding:1.75rem;margin-bottom:1rem}
+.q-meta{display:flex;align-items:center;gap:.6rem;margin-bottom:1.1rem;flex-wrap:wrap}
+.q-num{font-family:'JetBrains Mono',monospace;font-size:.8rem;font-weight:700;
+  background:var(--accent);color:#fffaf0;padding:.3rem .7rem;border-radius:var(--rs)}
+.q-topic{font-size:.78rem;color:var(--acc2);background:rgba(29,107,95,.12);
+  padding:.25rem .65rem;border-radius:var(--rs);border:1px solid rgba(29,107,95,.25)}
+.q-subj{font-size:.72rem;font-weight:700;padding:.22rem .6rem;border-radius:99px;
+  background:rgba(32,32,29,.07);color:var(--muted);border:1px solid var(--bord)}
+.diff{font-size:.78rem;padding:.22rem .6rem;border-radius:99px;font-weight:600;letter-spacing:.02em}
+.diff-1{background:rgba(28,107,62,.1);color:var(--ok);border:1px solid rgba(28,107,62,.25)}
+.diff-2{background:rgba(183,137,45,.1);color:#b7892d;border:1px solid rgba(183,137,45,.25)}
+.diff-3{background:rgba(163,61,45,.1);color:var(--no);border:1px solid rgba(163,61,45,.25)}
+.q-body{font-size:.95rem;color:var(--text);margin-bottom:1.4rem;line-height:1.85}
+.q-body table{border-collapse:collapse;margin:.75rem 0;font-size:.875rem}
+.q-body th,.q-body td{border:1px solid var(--bord);padding:.4rem .9rem}
+.q-body th{background:var(--surf2);color:var(--acc2);font-weight:600;text-align:center}
+.q-body td{font-family:'JetBrains Mono',monospace;font-size:.83rem}
+.q-body code{font-family:'JetBrains Mono',monospace;font-size:.875em;background:var(--surf2);
+  padding:.15em .4em;border-radius:4px;color:var(--acc2)}
+.q-body pre{background:#1e1e1e;border:1px solid #333;border-radius:var(--rs);
+  padding:.9rem 1.1rem;font-family:'JetBrains Mono',monospace;font-size:.83rem;
+  color:#d4d4d4;overflow-x:auto;margin:.65rem 0;line-height:1.6}
+.q-body pre .kw{color:#569cd6} .q-body pre .fn{color:#dcdcaa}
+.q-body pre .str{color:#ce9178} .q-body pre .cm{color:#6a9955}
+.q-body pre .num{color:#b5cea8}
+.q-body strong{color:var(--text);font-weight:700}
+.q-body .q-ask{display:none}
+.q-body .math{font-family:'JetBrains Mono',monospace;background:var(--surf2);padding:.2em .5em;border-radius:4px;font-size:.9em}
+
+
+.opts{display:flex;flex-direction:column;gap:.55rem}
+.opt{display:flex;align-items:flex-start;gap:.85rem;padding:.9rem 1.1rem;
+  background:var(--surf2);border:1.5px solid var(--bord);border-radius:var(--rs);
+  cursor:pointer;transition:all .17s;font-size:.92rem;user-select:none}
+.opt:hover:not(.locked){border-color:var(--accent);background:var(--sel-bg)}
+.opt.selected{border-color:var(--sel-bord);background:var(--sel-bg)}
+.opt.selected .opt-lbl{color:var(--acc2)}
+.opt.locked{cursor:default}
+.opt.g-correct{border-color:var(--ok)!important;background:var(--ok-bg)!important}
+.opt.g-correct .opt-lbl{color:var(--ok)!important}
+.opt.g-wrong{border-color:var(--no)!important;background:var(--no-bg)!important}
+.opt.g-wrong .opt-lbl{color:var(--no)!important}
+.opt-lbl{font-weight:700;font-size:.88rem;min-width:22px;color:var(--muted);flex-shrink:0;padding-top:.05rem}
+.opt-txt{line-height:1.7}
+.opt-txt code{font-family:'JetBrains Mono',monospace;font-size:.85em;background:rgba(0,0,0,.06);padding:.1em .35em;border-radius:3px}
+
+.sa-input-wrap{margin-top:.5rem}
+.sa-input{width:100%;padding:.75rem 1rem;border:1.5px solid var(--bord);border-radius:var(--rs);
+  font-size:.9rem;font-family:'Noto Sans KR',sans-serif;background:var(--surf2);
+  color:var(--text);outline:none;transition:border-color .2s;box-sizing:border-box}
+.sa-input:focus{border-color:var(--accent)}
+.sa-input.locked{color:var(--muted);cursor:default}
+.sa-input.g-correct{border-color:var(--ok);background:var(--ok-bg);color:var(--ok)}
+.sa-input.g-wrong{border-color:var(--no);background:var(--no-bg);color:var(--no)}
+.sa-correct-ans{margin-top:.5rem;font-size:.85rem;font-weight:600;color:var(--ok)}
+
+.grade-banner{display:none;margin-top:1rem;padding:.9rem 1.1rem;border-radius:var(--rs);
+  font-size:.875rem;font-weight:500;animation:slideUp .2s ease}
+.grade-banner.show{display:flex;align-items:flex-start;gap:.6rem}
+.grade-banner.correct{background:var(--ok-bg);border:1px solid rgba(28,107,62,.35);color:var(--ok)}
+.grade-banner.wrong{background:var(--no-bg);border:1px solid rgba(163,61,45,.35);color:var(--no)}
+.grade-icon{font-size:1.1rem;flex-shrink:0;margin-top:.05rem}
+
+.exp-box{display:none;margin-top:.75rem;padding:1rem 1.1rem;background:var(--surf2);
+  border:1px solid var(--bord);border-left:3px solid var(--acc2);border-radius:var(--rs);
+  font-size:.875rem;color:var(--text);line-height:1.85;animation:fadeIn .2s ease}
+.exp-box.show{display:block}
+.exp-head{font-size:.72rem;font-weight:700;color:var(--acc2);text-transform:uppercase;
+  letter-spacing:.07em;margin-bottom:.5rem}
+
+@keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideUp{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
+
+.nav{display:flex;gap:.65rem;margin-top:1.1rem;align-items:center}
+.btn{padding:.75rem 1.25rem;border-radius:var(--rs);font-size:.875rem;font-weight:600;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .17s;
+  border:1.5px solid var(--bord);white-space:nowrap}
+.btn:disabled{opacity:.28;cursor:default}
+.btn-ghost{background:transparent;color:var(--muted);flex-shrink:0}
+.btn-ghost:hover:not(:disabled){border-color:var(--acc2);color:var(--acc2)}
+.btn-grade{flex:1;background:var(--accent);border-color:var(--accent);color:#fffaf0}
+.btn-grade:hover:not(:disabled){opacity:.88}
+.btn-grade:disabled{background:var(--surf2);border-color:var(--bord);color:var(--muted)}
+.btn-next{background:transparent;color:var(--muted);flex-shrink:0}
+.btn-next:hover:not(:disabled){border-color:var(--acc2);color:var(--acc2)}
+
+.score-screen{display:none;animation:fadeIn .3s ease}
+.score-screen.show{display:block}
+.score-hero{text-align:center;padding:2.5rem 1rem;background:var(--surf);
+  border:1px solid var(--bord);border-radius:var(--r);margin-bottom:1.5rem}
+.score-grade{display:inline-block;font-family:'JetBrains Mono',monospace;font-size:2.5rem;
+  font-weight:700;padding:.5rem 2rem;border-radius:var(--r);margin-bottom:.75rem}
+.score-num{font-family:'JetBrains Mono',monospace;font-size:3.5rem;font-weight:700;
+  line-height:1;margin:.5rem 0}
+.score-sub{font-size:.9rem;color:var(--muted);margin-top:.3rem}
+.score-bar-wrap{background:var(--surf2);border-radius:99px;height:8px;margin:1.25rem 0 .4rem;overflow:hidden}
+.score-bar-fill{height:100%;border-radius:99px;transition:width .6s ease}
+.section-scores{display:grid;grid-template-columns:repeat(4,1fr);gap:.6rem;margin:1.25rem 0}
+.sec-card{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--rs);padding:.9rem 1rem}
+.sec-card .sec-name{font-size:.73rem;color:var(--muted);margin-bottom:.35rem;line-height:1.3}
+.sec-card .sec-val{font-family:'JetBrains Mono',monospace;font-size:1.3rem;font-weight:700}
+.score-actions{display:flex;gap:.75rem;justify-content:center;margin-top:1.25rem}
+.btn-restart{padding:.75rem 2rem;background:var(--accent);border:none;border-radius:var(--rs);
+  color:#fffaf0;font-size:.9rem;font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif}
+.btn-restart:hover{opacity:.88}
+.btn-review{padding:.75rem 2rem;background:var(--surf2);border:1px solid var(--bord);
+  border-radius:var(--rs);color:var(--text);font-size:.9rem;font-weight:600;cursor:pointer;
+  font-family:'Noto Sans KR',sans-serif}
+.btn-review:hover{border-color:var(--acc2);color:var(--acc2)}
+
+.btn-restart-nav{flex:1;padding:.75rem 1.25rem;background:var(--accent);border:none;
+  border-radius:var(--rs);color:#fffaf0;font-size:.875rem;font-weight:600;
+  font-family:'Noto Sans KR',sans-serif;cursor:pointer;transition:all .17s;white-space:nowrap}
+.btn-restart-nav:hover{opacity:.88}
+.btn-results-side{width:100%;margin-top:.5rem;padding:.45rem;background:var(--surf2);
+  border:1px solid var(--bord);border-radius:var(--rs);color:var(--text);font-size:.7rem;
+  font-weight:600;cursor:pointer;font-family:'Noto Sans KR',sans-serif;transition:all .17s}
+.btn-results-side:hover{border-color:var(--acc2);color:var(--acc2)}
+
+.btn-submit{flex:1;padding:.75rem 1.25rem;background:var(--surf2);border:1.5px solid var(--bord);
+  border-radius:var(--rs);color:var(--muted);font-size:.875rem;font-weight:600;
+  font-family:'Noto Sans KR',sans-serif;cursor:not-allowed;transition:all .25s;white-space:nowrap}
+.btn-submit.ready{background:linear-gradient(135deg,#1d6b5f,#2a8a7a);border-color:transparent;
+  color:#fffaf0;cursor:pointer;box-shadow:0 2px 10px rgba(29,107,95,.3)}
+.btn-submit.ready:hover{opacity:.9}
+
+.submit-confirm{position:fixed;inset:0;background:rgba(32,32,29,.5);display:flex;
+  align-items:center;justify-content:center;z-index:100;animation:fadeIn .2s ease}
+.confirm-box{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);
+  padding:2rem;max-width:400px;width:90%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.confirm-box h3{font-size:1.1rem;margin-bottom:.5rem}
+.confirm-box p{font-size:.875rem;color:var(--muted);margin-bottom:1.5rem}
+.confirm-btns{display:flex;gap:.75rem;justify-content:center}
+.confirm-btns button{padding:.7rem 1.8rem;border-radius:var(--rs);font-size:.875rem;font-weight:600;
+  cursor:pointer;font-family:'Noto Sans KR',sans-serif;border:1.5px solid var(--bord);transition:all .17s}
+.confirm-btns .cf-yes{background:var(--accent);border-color:var(--accent);color:#fffaf0}
+.confirm-btns .cf-yes:hover{opacity:.88}
+.confirm-btns .cf-no{background:var(--surf2);color:var(--text)}
+.confirm-btns .cf-no:hover{border-color:var(--acc2);color:var(--acc2)}
+
+
+@media(max-width:768px){
+  #quiz-view{flex-direction:column}
+  .prog-area{width:100%;position:static;padding:.85rem 1rem}
+  .prog-top{flex-direction:row;justify-content:space-between;align-items:center}
+}
+@media(max-width:540px){
+  .hdr h1{font-size:1.1rem}
+  .q-card{padding:1.25rem}
+  .section-scores{grid-template-columns:1fr 1fr 1fr}
+  .tab{font-size:.7rem;padding:.5rem .25rem;min-width:50px}
+  .score-num{font-size:2.5rem}
+  .dot{width:17px;height:17px;font-size:.5rem}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <div class="hdr">
+    <div class="hdr-badge">KOAI 2026 PRACTICE</div>
+    <h1>KOAI 2026 예상 기출문제 · 제2회</h1>
+    <p>1~2과목 (중등부) &nbsp;·&nbsp; 선택형 40 + 주관식 5 &nbsp;·&nbsp; 45문항</p>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+
+  <div id="quiz-view">
+    <div class="prog-area">
+      <div class="prog-top">
+        <span class="prog-title" id="prog-txt">응답 0 / 40</span>
+      </div>
+      <div id="dots-area"></div>
+      <button class="btn-results-side" id="btn-results-side" onclick="showScore()" style="display:none">결과 보기</button>
+    </div>
+
+    <div class="main-col">
+    <div class="q-card">
+      <div class="q-meta">
+        <span class="q-num" id="q-num">Q1</span>
+        <span class="q-topic" id="q-topic"></span>
+      </div>
+      <div class="q-body" id="q-body"></div>
+
+      <div class="opts" id="opts"></div>
+      <div class="grade-banner" id="grade-banner"></div>
+      <div class="exp-box" id="exp-box">
+        <div class="exp-head">풀이 해설</div>
+        <div id="exp-body"></div>
+      </div>
+    </div>
+
+    <div class="nav">
+      <button class="btn btn-ghost" id="btn-prev" onclick="move(-1)">← 이전</button>
+      <button class="btn-submit" id="btn-submit" onclick="submitAll()" disabled>제출하기</button>
+      <button class="btn-restart-nav" id="btn-restart-nav" onclick="restartAll()" style="display:none">다시 풀기</button>
+      <button class="btn btn-next" id="btn-next" onclick="move(1)">다음 →</button>
+    </div>
+    </div>
+  </div>
+
+  <div class="score-screen" id="score-screen"></div>
+
+</div>
+
+<script>
+const LBL=['①','②','③','④'];
+const TOTAL=45;
+const DIFF_LABEL={1:'★☆☆ 기초',2:'★★☆ 보통',3:'★★★ 심화'};
+const DIFF_CLS={1:'diff-1',2:'diff-2',3:'diff-3'};
+
+const SECTIONS=[
+  {name:'1-1 프로그래밍',full:'1-1. 프로그래밍 기초',subj:'1과목',start:0,count:6},
+  {name:'1-2 지도학습',full:'1-2. 지도학습',subj:'1과목',start:6,count:7},
+  {name:'1-3 비지도학습',full:'1-3. 비지도학습',subj:'1과목',start:13,count:5},
+  {name:'1-4 데이터사이언스',full:'1-4. 데이터 사이언스 기초',subj:'1과목',start:18,count:7},
+  {name:'2-1 신경망',full:'2-1. 신경망',subj:'2과목',start:25,count:6},
+  {name:'2-2 딥러닝',full:'2-2. 딥러닝',subj:'2과목',start:31,count:9},
+  {name:'주관식',full:'주관식',subj:'1-2과목',start:40,count:5}
+];
+
+const DATA=[
+/* ═══════════════════════════════════════════════════
+   1-1. 프로그래밍 기초 (Q1 ~ Q6)
+   ═══════════════════════════════════════════════════ */
+{topic:"NumPy reshape/concatenate",d:1,
+q:`<p>다음 NumPy 코드의 실행 결과로 옳은 것은?</p>
+<pre>import numpy as np
+a = np.array([1, 2, 3, 4, 5, 6])
+b = a.reshape(2, 3)
+c = np.concatenate([b, b], axis=0)
+print(c.shape)</pre>`,
+hint:"reshape(2,3)은 2행 3열 행렬을 만들고, axis=0으로 concatenate하면 행 방향으로 이어 붙입니다.",
+opts:["(2, 6)","(4, 3)","(2, 3)","(6, 2)"],ans:1,
+exp:"<code>a.reshape(2,3)</code> → shape (2,3)<br><code>np.concatenate([b, b], axis=0)</code> → 행 방향(axis=0)으로 이어 붙임<br>2+2 = 4행, 열은 그대로 3<br>결과: <strong>(4, 3)</strong>"},
+
+{topic:"Pandas pivot_table",d:2,
+q:`<p>다음 Pandas 코드의 출력 결과로 옳은 것은?</p>
+<pre>import pandas as pd
+df = pd.DataFrame({'과목': ['수학','수학','영어','영어'],
+                    '반': ['A','B','A','B'],
+                    '점수': [80, 90, 70, 60]})
+pt = df.pivot_table(values='점수', index='과목',
+                     columns='반', aggfunc='mean')
+print(pt.loc['수학','B'])</pre>`,
+hint:"pivot_table은 index와 columns를 기준으로 values를 집계합니다.",
+opts:["80","90","70","85"],ans:1,
+exp:"pivot_table에서 index='과목', columns='반'으로 피벗하면:<br>• (수학, A) = 80, (수학, B) = <strong>90</strong><br>• (영어, A) = 70, (영어, B) = 60<br><code>pt.loc['수학','B']</code> = <strong>90</strong>"},
+
+{topic:"PyTorch view/unsqueeze",d:2,
+q:`<p>다음 PyTorch 코드의 출력 결과로 옳은 것은?</p>
+<pre>import torch
+x = torch.tensor([1, 2, 3])   # shape (3,)
+y = x.unsqueeze(0)             # (A)
+z = y.view(3, 1)               # (B)
+print(y.shape, z.shape)</pre>`,
+hint:"unsqueeze(0)은 0번 축에 차원을 추가하고, view는 텐서를 원하는 shape으로 변환합니다.",
+opts:["torch.Size([3, 1]) torch.Size([1, 3])","torch.Size([1, 3]) torch.Size([3, 1])","torch.Size([3]) torch.Size([3, 1])","torch.Size([1, 3]) torch.Size([1, 3])"],ans:1,
+exp:"<code>x.unsqueeze(0)</code>: shape (3,) → <strong>(1, 3)</strong> (0번 축에 차원 추가)<br><code>y.view(3, 1)</code>: shape (1, 3) → <strong>(3, 1)</strong> (원소 수 동일하므로 변환 가능)<br>결과: <strong>torch.Size([1, 3]) torch.Size([3, 1])</strong>"},
+
+{topic:"matplotlib subplots",d:1,
+q:`<p>matplotlib에서 2행 3열의 서브플롯을 생성하는 코드로 옳은 것은?</p>`,
+hint:"subplots 함수의 매개변수 순서는 (행 수, 열 수)입니다.",
+opts:["fig, ax = plt.subplots(3, 2)","fig, ax = plt.subplots(2, 3)","fig, ax = plt.subplot(2, 3)","fig, ax = plt.subplots(6)"],ans:1,
+exp:"<code>plt.subplots(nrows, ncols)</code>로 서브플롯을 생성합니다.<br>2행 3열이므로 <code>plt.subplots(2, 3)</code>이 올바릅니다.<br>• <code>subplot</code>(단수)은 반환값이 다르며 fig를 직접 반환하지 않습니다.<br>• 반환되는 ax는 shape (2, 3)의 배열입니다."},
+
+{topic:"List Comprehension 성능",d:2,
+q:`<p>다음 두 코드의 결과가 동일할 때, 일반적으로 더 빠른 것은?</p>
+<pre># 방법 A
+result = []
+for i in range(10000):
+    result.append(i ** 2)
+
+# 방법 B
+result = [i ** 2 for i in range(10000)]</pre>`,
+hint:"리스트 컴프리헨션은 내부적으로 C 레벨에서 최적화되어 있습니다.",
+opts:["방법 A가 항상 더 빠르다","방법 B(리스트 컴프리헨션)가 일반적으로 더 빠르다","두 방법의 속도는 항상 동일하다","방법 A가 메모리를 더 적게 사용한다"],ans:1,
+exp:"<strong>리스트 컴프리헨션</strong>이 일반적으로 더 빠른 이유:<br>• 바이트코드 수준에서 최적화됨<br>• <code>append</code> 메서드 호출 오버헤드가 없음<br>• 내부적으로 LIST_APPEND 명령어를 사용<br>결과는 동일하지만 속도는 대략 20~30% 빠릅니다."},
+
+{topic:"NumPy 조건 필터링",d:1,
+q:`<p>다음 NumPy 코드의 출력 결과로 옳은 것은?</p>
+<pre>import numpy as np
+a = np.array([10, 25, 30, 5, 15])
+mask = a > 12
+print(a[mask])</pre>`,
+hint:"불리언 마스크(Boolean mask)는 조건이 True인 원소만 선택합니다.",
+opts:["[10, 25, 30, 5, 15]","[25, 30, 15]","[True, True, True, False, True]","[10, 5]"],ans:1,
+exp:"<code>a > 12</code> → [False, True, True, False, True]<br><code>a[mask]</code>는 True인 위치의 원소만 선택합니다.<br>25 > 12 ✓, 30 > 12 ✓, 15 > 12 ✓<br>결과: <strong>[25, 30, 15]</strong>"},
+
+/* ═══════════════════════════════════════════════════
+   1-2. 지도학습 (Q7 ~ Q13)
+   ═══════════════════════════════════════════════════ */
+{topic:"Naive Bayes 독립 가정",d:2,
+q:`<p>나이브 베이즈(Naive Bayes) 분류기의 핵심 가정으로 옳은 것은?</p>`,
+hint:"'Naive(순진한)'라는 이름이 붙은 이유를 생각해보세요.",
+opts:["모든 특성(feature)이 클래스에 대해 조건부 독립이다","모든 클래스의 사전 확률이 동일하다","데이터가 정규 분포를 따라야 한다","특성 간 상관관계가 높을수록 성능이 좋다"],ans:0,
+exp:"나이브 베이즈의 <strong>'나이브'</strong> 가정:<br>P(x₁,x₂,...,xₙ|C) = P(x₁|C) × P(x₂|C) × ... × P(xₙ|C)<br>• 특성들이 클래스가 주어졌을 때 <strong>조건부 독립</strong>이라고 가정<br>• 현실에서는 거의 성립하지 않지만, 실전에서 놀랍도록 잘 작동<br>• 특히 텍스트 분류(스팸 필터)에서 효과적"},
+
+{topic:"ElasticNet",d:2,
+q:`<p>ElasticNet 정규화에 대한 설명으로 옳은 것은?</p>`,
+hint:"ElasticNet은 L1과 L2 정규화를 결합한 것입니다.",
+opts:["L1 정규화만 사용한다","L2 정규화만 사용한다","L1과 L2 정규화를 혼합하여 사용한다","정규화를 전혀 사용하지 않는다"],ans:2,
+exp:"<strong>ElasticNet</strong>의 비용 함수:<br>MSE + λ₁Σ|w| + λ₂Σw²<br>• L1(Lasso) 효과: 불필요한 특성의 가중치를 0으로 만들어 <strong>특성 선택</strong><br>• L2(Ridge) 효과: 상관된 특성들의 가중치를 골고루 분배<br>• <code>l1_ratio</code> 파라미터로 L1과 L2의 비율을 조절"},
+
+{topic:"Random Forest 특성 중요도",d:2,
+q:`<p>Random Forest에서 <strong>특성 중요도(feature importance)</strong>를 측정하는 기본 방법으로 옳은 것은?</p>`,
+hint:"각 특성이 트리의 분할에 얼마나 기여했는지를 생각해보세요.",
+opts:["각 특성의 분산을 측정한다","각 특성으로 분할 시 불순도(impurity) 감소량의 평균을 계산한다","특성 간 상관계수를 계산한다","PCA 고유값으로 측정한다"],ans:1,
+exp:"Random Forest의 <strong>기본 특성 중요도</strong> (MDI: Mean Decrease in Impurity):<br>• 각 트리에서 해당 특성으로 분할할 때 <strong>불순도 감소량</strong>을 기록<br>• 모든 트리에 대해 <strong>평균</strong>을 계산<br>• scikit-learn의 <code>.feature_importances_</code>로 접근 가능<br>• 다른 방법: 순열 중요도(Permutation Importance)"},
+
+{topic:"AdaBoost",d:2,
+q:`<p>AdaBoost 알고리즘에서 각 반복(iteration)마다 수행하는 작업으로 옳은 것은?</p>`,
+hint:"Ada는 Adaptive를 의미합니다. 이전에 틀린 샘플에 더 집중합니다.",
+opts:["모든 샘플의 가중치를 동일하게 유지한다","이전 단계에서 잘못 분류된 샘플의 가중치를 증가시킨다","무작위로 샘플을 제거한다","특성의 수를 줄인다"],ans:1,
+exp:"<strong>AdaBoost</strong>의 핵심 원리:<br>① 모든 샘플에 동일한 가중치로 시작<br>② 약한 학습기(weak learner) 학습<br>③ <strong>잘못 분류된 샘플</strong>의 가중치를 <strong>증가</strong><br>④ 정확히 분류된 샘플의 가중치는 감소<br>⑤ 다음 약한 학습기가 어려운 샘플에 집중<br>→ 최종 예측은 모든 약한 학습기의 가중 투표"},
+
+{topic:"다중 클래스 OvR/OvO",d:2,
+q:`<p>4개 클래스 분류 문제에서 One-vs-One(OvO) 전략을 사용하면 학습해야 하는 이진 분류기의 수는?</p>`,
+hint:"OvO는 모든 클래스 쌍의 조합마다 분류기를 학습합니다. 조합 공식: n(n-1)/2",
+opts:["4","6","8","12"],ans:1,
+exp:"<strong>One-vs-One (OvO)</strong>: 모든 클래스 쌍에 대해 분류기 학습<br>분류기 수 = C(n,2) = n(n-1)/2<br>n=4일 때: 4 × 3 / 2 = <strong>6</strong><br>• (A,B), (A,C), (A,D), (B,C), (B,D), (C,D)<br>참고) OvR(One-vs-Rest)은 n개 = 4개의 분류기만 필요"},
+
+{topic:"Soft Margin SVM — C 파라미터",d:2,
+q:`<p>소프트 마진 SVM에서 하이퍼파라미터 <strong>C</strong>의 값이 매우 클 때 나타나는 현상으로 옳은 것은?</p>`,
+hint:"C는 오분류에 대한 페널티입니다. C가 크면 오분류를 얼마나 허용할까요?",
+opts:["마진이 최대화되어 과소적합이 발생한다","오분류를 거의 허용하지 않아 과대적합 위험이 증가한다","결정 경계가 항상 직선이 된다","커널 함수를 사용할 수 없게 된다"],ans:1,
+exp:"SVM의 <strong>C 파라미터</strong>:<br>• C가 <strong>크면</strong>: 오분류 페널티 증가 → 마진 좁아짐 → <strong>과대적합</strong> 위험<br>• C가 <strong>작으면</strong>: 오분류 허용 → 마진 넓어짐 → <strong>과소적합</strong> 위험<br>• C는 마진의 크기와 오분류 허용 사이의 트레이드오프를 조절합니다."},
+
+{topic:"CART — Gini 불순도",d:2,
+q:`<p>이진 분류에서 한 노드에 클래스 A가 30개, 클래스 B가 10개 있을 때 Gini 불순도로 가장 가까운 값은?</p>
+<p><code class="math">Gini = 1 - Σ p<sub>i</sub>²</code></p>`,
+hint:"전체 40개 중 A의 비율 = 30/40 = 0.75, B의 비율 = 10/40 = 0.25",
+opts:["0.250","0.375","0.500","0.125"],ans:1,
+exp:"p(A) = 30/40 = 0.75, p(B) = 10/40 = 0.25<br>Gini = 1 - (0.75² + 0.25²)<br>= 1 - (0.5625 + 0.0625)<br>= 1 - 0.625 = <strong>0.375</strong><br>Gini = 0이면 완전 순수, Gini = 0.5이면 최대 불순도(이진 분류)"},
+
+/* ═══════════════════════════════════════════════════
+   1-3. 비지도학습 (Q14 ~ Q18)
+   ═══════════════════════════════════════════════════ */
+{topic:"계층적 군집화 덴드로그램",d:2,
+q:`<p>계층적 군집화(Hierarchical Clustering)에서 <strong>덴드로그램(Dendrogram)</strong>의 y축이 나타내는 것으로 옳은 것은?</p>`,
+hint:"덴드로그램은 군집이 합쳐지는 과정을 트리 형태로 보여줍니다.",
+opts:["데이터 포인트의 수","군집이 병합될 때의 거리(또는 비유사도)","주성분 분석의 설명 분산 비율","각 군집의 실루엣 점수"],ans:1,
+exp:"<strong>덴드로그램</strong>의 구조:<br>• x축: 개별 데이터 포인트 또는 군집<br>• y축: 두 군집이 병합될 때의 <strong>거리(비유사도)</strong><br>• 높이가 높을수록 멀리 떨어진 군집이 병합됨<br>• 특정 높이에서 수평선을 그으면 군집 수를 결정 가능"},
+
+{topic:"실루엣 점수 해석",d:2,
+q:`<p>실루엣 점수(Silhouette Score)에 대한 설명으로 옳은 것은?</p>`,
+hint:"실루엣 점수는 -1에서 1 사이의 값을 가지며, 같은 군집 내 밀집도와 다른 군집과의 분리도를 측정합니다.",
+opts:["항상 0에서 1 사이의 값을 가진다","1에 가까울수록 군집이 잘 분리되어 있고, -1에 가까울수록 잘못 배정된 것이다","값이 클수록 군집 수가 적다는 것을 의미한다","비지도학습에서는 사용할 수 없다"],ans:1,
+exp:"<strong>실루엣 점수</strong> = (b - a) / max(a, b)<br>• a: 같은 군집 내 평균 거리 (밀집도)<br>• b: 가장 가까운 다른 군집과의 평균 거리 (분리도)<br>• 범위: <strong>-1 ~ 1</strong><br>• 1에 가까움: 잘 분리됨 ✓<br>• 0 근처: 군집 경계에 위치<br>• 음수: 잘못된 군집에 배정됨 ✗"},
+
+{topic:"GMM vs K-means",d:2,
+q:`<p>가우시안 혼합 모델(GMM)이 K-means에 비해 갖는 장점으로 옳은 것은?</p>`,
+hint:"K-means는 하드 할당(hard assignment), GMM은 소프트 할당(soft assignment)을 합니다.",
+opts:["항상 K-means보다 빠르다","각 데이터 포인트가 여러 군집에 속할 확률을 제공하고 타원형 군집을 모델링할 수 있다","군집 수를 자동으로 결정한다","이상치에 더 강건하다"],ans:1,
+exp:"<strong>GMM</strong>의 장점:<br>• <strong>소프트 할당</strong>: 각 데이터가 각 군집에 속할 확률을 제공<br>• <strong>타원형 군집</strong>: 공분산 행렬로 다양한 형태 모델링 가능<br>• K-means는 구형 군집 + 하드 할당만 가능<br>단점: EM 알고리즘이 느리고, 초기값에 민감할 수 있음"},
+
+{topic:"엘보 방법",d:1,
+q:`<p>K-means에서 최적의 군집 수 K를 결정하기 위한 <strong>엘보 방법(Elbow Method)</strong>에 대한 설명으로 옳은 것은?</p>`,
+hint:"K를 증가시키며 Within-Cluster Sum of Squares를 관찰합니다.",
+opts:["K에 따른 실루엣 점수의 최대값을 선택한다","K에 따른 군집 내 제곱합(WCSS)을 그래프로 그려 꺾이는 지점(엘보)을 선택한다","K = 데이터 수 / 10으로 항상 설정한다","가장 큰 K를 선택하는 것이 항상 최적이다"],ans:1,
+exp:"<strong>엘보 방법</strong>:<br>• x축: 군집 수 K, y축: WCSS (Within-Cluster Sum of Squares)<br>• K가 증가하면 WCSS는 항상 감소<br>• 감소 폭이 급격히 줄어드는 지점 = <strong>엘보(팔꿈치)</strong><br>• 이 지점이 적정 군집 수<br>• 항상 명확한 엘보가 나타나지는 않음"},
+
+{topic:"Isolation Forest",d:2,
+q:`<p>Isolation Forest의 이상 탐지 원리로 옳은 것은?</p>`,
+hint:"이상치(outlier)는 정상 데이터와 다른 특성을 가지고 있어 더 쉽게 '고립'됩니다.",
+opts:["밀도가 높은 영역의 데이터를 이상치로 판단한다","무작위 분할로 데이터를 고립시킬 때 이상치는 적은 분할로도 빠르게 고립된다","클러스터 중심에서 먼 데이터를 이상치로 판단한다","오토인코더와 동일한 원리를 사용한다"],ans:1,
+exp:"<strong>Isolation Forest</strong>의 원리:<br>• 무작위로 특성과 분할값을 선택하여 데이터를 재귀적으로 분할<br>• <strong>이상치</strong>: 주변에 비슷한 데이터가 적음 → <strong>적은 분할</strong>로 고립<br>• <strong>정상 데이터</strong>: 밀집 영역 → 많은 분할이 필요<br>• 경로 길이(path length)가 짧을수록 이상치일 확률 높음"},
+
+/* ═══════════════════════════════════════════════════
+   1-4. 데이터 사이언스 기초 (Q19 ~ Q25)
+   ═══════════════════════════════════════════════════ */
+{topic:"Stratified K-Fold",d:2,
+q:`<p>Stratified K-Fold 교차검증이 일반 K-Fold보다 권장되는 경우로 옳은 것은?</p>`,
+hint:"Stratified는 '계층화된'이라는 뜻입니다. 클래스 분포와 관련이 있습니다.",
+opts:["특성의 수가 매우 많을 때","클래스 비율이 불균형한 분류 문제에서 각 폴드에 클래스 비율을 유지하기 위해","회귀 문제에서 항상 사용해야 한다","데이터가 시계열일 때"],ans:1,
+exp:"<strong>Stratified K-Fold</strong>:<br>• 각 폴드에서 <strong>클래스 비율을 원본과 동일하게</strong> 유지<br>• 예: 양성 10%, 음성 90% → 각 폴드도 10%:90%<br>• 불균형 데이터에서 일반 K-Fold를 쓰면 일부 폴드에 소수 클래스가 없을 수 있음<br>• scikit-learn: <code>StratifiedKFold</code>"},
+
+{topic:"SMOTE",d:2,
+q:`<p>불균형 데이터 처리 기법인 <strong>SMOTE</strong>에 대한 설명으로 옳은 것은?</p>`,
+hint:"SMOTE는 Synthetic Minority Over-sampling Technique의 약자입니다.",
+opts:["다수 클래스의 샘플을 무작위로 제거한다","소수 클래스의 기존 샘플을 단순 복제한다","소수 클래스의 샘플 사이를 보간하여 합성 샘플을 생성한다","다수 클래스에 가중치를 부여한다"],ans:2,
+exp:"<strong>SMOTE</strong>의 원리:<br>① 소수 클래스 샘플 선택<br>② 해당 샘플의 K-최근접 이웃 중 하나를 무작위 선택<br>③ 두 샘플 사이의 선분 위에서 <strong>합성(synthetic) 샘플</strong> 생성<br>→ 단순 복제와 달리 새로운 데이터 포인트를 만들어 과대적합 위험 감소"},
+
+{topic:"VIF 다중공선성",d:2,
+q:`<p>다중공선성(Multicollinearity) 진단 지표인 <strong>VIF(분산 팽창 인수)</strong>에 대한 설명으로 옳은 것은?</p>`,
+hint:"VIF = 1 / (1 - R²). R²가 높으면 다른 특성으로 해당 특성을 잘 예측할 수 있다는 의미입니다.",
+opts:["VIF가 1이면 심각한 다중공선성이 있다","VIF가 클수록(일반적으로 10 이상) 다중공선성이 심하다","VIF는 종속 변수와의 상관만 측정한다","VIF는 항상 0에서 1 사이의 값을 가진다"],ans:1,
+exp:"<strong>VIF</strong> (Variance Inflation Factor):<br>• 각 독립 변수를 나머지 독립 변수로 회귀한 R²를 이용<br>• VIF = 1/(1−R²)<br>• VIF = 1: 다중공선성 없음<br>• VIF = 5~10: 주의 필요<br>• <strong>VIF > 10</strong>: 심각한 다중공선성 → 해당 변수 제거 또는 PCA 고려"},
+
+{topic:"데이터 누수 유형",d:2,
+q:`<p>다음 중 <strong>데이터 누수(Data Leakage)</strong>에 해당하는 경우로 옳은 것은?</p>`,
+hint:"데이터 누수는 모델이 학습 시 실제 예측 시점에서 알 수 없는 정보를 사용하는 것입니다.",
+opts:["학습 데이터에 결측치가 있는 경우","전체 데이터에 대해 표준화를 수행한 후 학습/검증 세트로 분할한 경우","학습 데이터의 양이 부족한 경우","과소적합이 발생한 경우"],ans:1,
+exp:"<strong>데이터 누수</strong> 유형:<br>• <strong>전처리 누수</strong>: 전체 데이터로 스케일링 → 검증 데이터 정보가 학습에 반영 ✗<br>• <strong>타겟 누수</strong>: 예측 시점에 알 수 없는 미래 정보를 특성으로 사용<br>• 올바른 방법: 먼저 분할 → 학습 데이터로만 전처리 fit → 검증 데이터에 transform<br>• Pipeline 사용이 누수를 방지하는 좋은 방법"},
+
+{topic:"PR 곡선 vs ROC",d:2,
+q:`<p>양성 클래스가 전체의 2%인 극심한 불균형 데이터에서 모델 성능 평가에 더 적합한 곡선으로 옳은 것은?</p>`,
+hint:"ROC 곡선의 FPR은 음성 샘플 수가 많을 때 낮은 값을 유지하기 쉽습니다.",
+opts:["ROC 곡선이 항상 더 적합하다","PR(Precision-Recall) 곡선이 더 적합하다","두 곡선의 정보가 항상 동일하므로 차이가 없다","정확도(Accuracy) 곡선이 가장 적합하다"],ans:1,
+exp:"극심한 불균형 데이터에서 <strong>PR 곡선</strong>이 더 적합한 이유:<br>• ROC의 FPR = FP/(FP+TN): TN이 매우 많으면 FPR이 항상 낮아 보임<br>• → ROC AUC가 과도하게 높게 나옴 (실제 성능보다 낙관적)<br>• PR 곡선: Precision과 Recall만 사용 → 양성 클래스에 집중<br>• <strong>불균형이 심할수록 PR 곡선이 더 정직한 평가</strong>"},
+
+{topic:"Log Loss",d:2,
+q:`<p>이진 분류에서 실제 레이블이 1이고 모델의 예측 확률이 0.9일 때, 해당 샘플의 Log Loss에 가장 가까운 값은?</p>
+<p><code class="math">Log Loss = -[y·log(p) + (1-y)·log(1-p)]</code></p>`,
+hint:"y=1이므로 -log(0.9)만 계산하면 됩니다. log는 자연로그(ln)입니다.",
+opts:["0.02","0.05","0.11","0.30"],ans:2,
+exp:"y=1, p=0.9일 때:<br>Log Loss = -[1 × log(0.9) + 0 × log(0.1)]<br>= -log(0.9)<br>= -(-0.1054) = <strong>0.1054 ≈ 0.11</strong><br>• 예측이 정확할수록(p→1) Log Loss → 0<br>• 예측이 틀릴수록(p→0) Log Loss → ∞"},
+
+{topic:"Label Encoding vs One-Hot",d:1,
+q:`<p>범주형 변수 인코딩에서 <strong>Label Encoding</strong>이 One-Hot Encoding보다 적합한 경우로 옳은 것은?</p>`,
+hint:"Label Encoding은 범주에 정수를 부여합니다. 이 정수 간의 크기 관계가 의미 있는 경우를 생각해보세요.",
+opts:["혈액형(A, B, AB, O)처럼 순서가 없는 범주","학력(초졸, 중졸, 고졸, 대졸)처럼 순서가 있는 범주","색상(빨강, 파랑, 초록)처럼 명목형 범주","Label Encoding이 항상 더 우수하다"],ans:1,
+exp:"<strong>Label Encoding</strong>: 범주 → 정수 (0, 1, 2, 3, ...)<br>• 정수 간 크기 관계가 부여됨<br>• <strong>순서형 변수</strong>(초졸 < 중졸 < 고졸 < 대졸)에 적합<br>• 명목형 변수(혈액형, 색상)에 쓰면 모델이 거짓 순서 관계를 학습 ✗<br>→ 명목형에는 <strong>One-Hot Encoding</strong>이 적합"},
+
+/* ═══════════════════════════════════════════════════
+   2-1. 신경망 (Q26 ~ Q31)
+   ═══════════════════════════════════════════════════ */
+{topic:"Xavier 초기화",d:2,
+q:`<p>Xavier(Glorot) 가중치 초기화의 목적으로 옳은 것은?</p>`,
+hint:"각 층의 출력 분산이 입력 분산과 비슷하게 유지되어야 합니다.",
+opts:["모든 가중치를 0으로 초기화한다","각 층의 입력과 출력의 분산을 일정하게 유지하여 그래디언트 소실/폭발을 방지한다","학습률을 자동으로 조정한다","배치 정규화를 대체한다"],ans:1,
+exp:"<strong>Xavier 초기화</strong>:<br>• 가중치를 Var(w) = 2/(n_in + n_out)으로 초기화<br>• n_in: 입력 뉴런 수, n_out: 출력 뉴런 수<br>• 각 층의 출력 분산 ≈ 입력 분산 → <strong>신호가 안정적으로 전달</strong><br>• sigmoid/tanh에 적합, ReLU에는 He 초기화가 더 적합<br>• 모든 가중치 0으로 하면 대칭성 문제 발생"},
+
+{topic:"학습률이 너무 클 때",d:1,
+q:`<p>신경망 학습 시 <strong>학습률(learning rate)</strong>이 너무 크면 발생하는 현상으로 가장 옳은 것은?</p>`,
+hint:"학습률이 크면 가중치 업데이트 폭이 커지므로 최적점을 지나칠 수 있습니다.",
+opts:["손실이 매우 느리게 감소한다","손실이 발산하거나 진동하여 수렴하지 않는다","항상 전역 최적해에 도달한다","과소적합이 반드시 발생한다"],ans:1,
+exp:"학습률이 <strong>너무 크면</strong>:<br>• 가중치 업데이트 폭이 과도 → 최적점을 <strong>건너뛰어</strong> 버림<br>• 손실이 감소하지 않고 <strong>진동</strong>하거나 <strong>발산</strong><br>• NaN 값이 발생할 수도 있음<br>반대로 너무 작으면: 수렴이 매우 느리고, 지역 최솟값에 갇힐 수 있음"},
+
+{topic:"모멘텀 옵티마이저",d:2,
+q:`<p>경사하강법에 <strong>모멘텀(Momentum)</strong>을 추가하는 이유로 옳은 것은?</p>`,
+hint:"물리학의 관성(momentum)과 비슷합니다. 이전 업데이트 방향을 기억합니다.",
+opts:["학습률을 자동으로 감소시킨다","이전 그래디언트의 방향을 누적하여 진동을 줄이고 수렴 속도를 높인다","가중치를 0에 가깝게 유지한다","배치 크기를 자동으로 조절한다"],ans:1,
+exp:"<strong>모멘텀</strong>의 효과:<br>• v_t = β·v_{t-1} + η·∇L (이전 속도를 β비율로 유지)<br>• 같은 방향 연속 → 속도 <strong>가속</strong><br>• 방향 변경(진동) → 상쇄되어 <strong>감속</strong><br>• 안장점(saddle point) 탈출에도 도움<br>• 일반적으로 β = 0.9 사용"},
+
+{topic:"그래디언트 클리핑",d:2,
+q:`<p>신경망 학습에서 <strong>그래디언트 클리핑(Gradient Clipping)</strong>의 목적으로 옳은 것은?</p>`,
+hint:"그래디언트가 비정상적으로 커지는 상황을 생각해보세요.",
+opts:["그래디언트 소실 문제를 해결한다","그래디언트의 크기가 임계값을 초과하면 잘라내어 그래디언트 폭발을 방지한다","학습률을 대체한다","가중치를 정규화한다"],ans:1,
+exp:"<strong>그래디언트 클리핑</strong>:<br>• 그래디언트 노름이 임계값(threshold)을 초과하면 <strong>스케일링</strong>하여 줄임<br>• <strong>그래디언트 폭발(exploding gradient)</strong> 방지가 목적<br>• 특히 RNN/LSTM 학습에서 중요<br>• PyTorch: <code>torch.nn.utils.clip_grad_norm_()</code><br>• 그래디언트 소실은 해결하지 않음 (별도 기법 필요)"},
+
+{topic:"Softmax 함수 성질",d:2,
+q:`<p>Softmax 함수에 대한 설명으로 옳지 않은 것은?</p>
+<p><code class="math">softmax(z<sub>i</sub>) = e<sup>z_i</sup> / Σ e<sup>z_j</sup></code></p>`,
+hint:"Softmax 출력값들의 합과 범위를 생각해보세요.",
+opts:["모든 출력값의 합은 1이다","각 출력값은 0에서 1 사이이다","출력값 중 음수가 존재할 수 있다","가장 큰 입력값에 대응하는 출력이 가장 크다"],ans:2,
+exp:"<strong>Softmax</strong> 함수의 성질:<br>• 모든 출력의 합 = <strong>1</strong> ✓<br>• 각 출력 ∈ <strong>(0, 1)</strong> ✓ (지수 함수이므로 항상 양수)<br>• <strong>음수 불가능</strong> → ③이 틀림<br>• 입력의 순서를 보존 (monotonic) ✓<br>• 확률 분포로 해석 가능"},
+
+{topic:"Weight Decay",d:2,
+q:`<p>신경망 학습에서 <strong>가중치 감쇠(Weight Decay)</strong>의 효과로 옳은 것은?</p>`,
+hint:"Weight Decay는 매 업데이트마다 가중치를 일정 비율 줄이는 것입니다.",
+opts:["가중치가 커지는 것을 억제하여 과대적합을 방지한다","학습 속도를 높인다","가중치를 항상 양수로 유지한다","은닉층의 수를 줄인다"],ans:0,
+exp:"<strong>Weight Decay</strong>:<br>• 매 업데이트 시 가중치에 (1 - λ)를 곱함<br>• w ← w - η·∇L - η·λ·w<br>• 효과: 가중치가 <strong>과도하게 커지는 것을 방지</strong><br>• → 모델 복잡도 감소 → <strong>과대적합 방지</strong><br>• L2 정규화와 유사하지만, AdamW에서는 분리 적용"},
+
+/* ═══════════════════════════════════════════════════
+   2-2. 딥러닝 (Q32 ~ Q40)
+   ═══════════════════════════════════════════════════ */
+{topic:"CNN 수용 영역",d:2,
+q:`<p>CNN에서 3x3 합성곱 레이어를 2개 쌓았을 때, 두 번째 레이어의 한 뉴런이 볼 수 있는 입력 이미지의 <strong>수용 영역(Receptive Field)</strong> 크기는?</p>`,
+hint:"첫 번째 레이어에서 3x3을 보고, 두 번째 레이어에서 그 결과의 3x3을 봅니다.",
+opts:["3x3","5x5","7x7","9x9"],ans:1,
+exp:"<strong>수용 영역</strong> 계산 (stride=1, no padding 가정):<br>• 1번째 3x3 Conv: 수용 영역 = <strong>3x3</strong><br>• 2번째 3x3 Conv: 각 위치가 이전 층의 3x3을 참조<br>→ 원본 기준 3+3-1 = <strong>5x5</strong><br>• 일반 공식: r = r + (k-1) × stride_prod<br>• 3x3 두 개 ≈ 5x5 한 개의 수용 영역 (파라미터는 더 적음)"},
+
+{topic:"ResNet 스킵 연결",d:2,
+q:`<p>ResNet의 <strong>스킵 연결(Skip Connection)</strong>이 해결하는 핵심 문제로 옳은 것은?</p>`,
+hint:"매우 깊은 네트워크에서 층을 추가하면 오히려 성능이 떨어지는 현상을 생각해보세요.",
+opts:["파라미터 수를 줄인다","깊은 네트워크에서 그래디언트가 직접 전달되어 학습이 안정화되고 층 추가에 따른 성능 저하를 방지한다","합성곱 연산 속도를 높인다","데이터 증강 효과를 제공한다"],ans:1,
+exp:"<strong>ResNet Skip Connection</strong>:<br>• 출력: F(x) + x (입력 x를 직접 더함)<br>• 그래디언트가 스킵 연결을 통해 <strong>직접 전달</strong> → 소실 완화<br>• 항등 매핑(identity mapping) 학습 가능 → <strong>깊어져도 최소한 얕은 모델 이상의 성능</strong><br>• degradation problem 해결이 핵심 기여"},
+
+{topic:"LSTM 망각 게이트",d:2,
+q:`<p>LSTM의 <strong>망각 게이트(Forget Gate)</strong>의 역할로 옳은 것은?</p>`,
+hint:"망각 게이트는 이전 셀 상태(cell state)의 정보를 얼마나 유지할지 결정합니다.",
+opts:["새로운 정보를 셀 상태에 추가한다","이전 셀 상태에서 불필요한 정보를 선택적으로 제거(망각)한다","최종 출력을 결정한다","학습률을 조절한다"],ans:1,
+exp:"LSTM의 세 가지 게이트:<br>• <strong>망각 게이트(f_t)</strong>: σ(W_f·[h_{t-1}, x_t] + b_f)<br>→ 0~1 사이 값으로 이전 셀 상태를 <strong>얼마나 유지/제거</strong>할지 결정<br>• 입력 게이트(i_t): 새 정보를 셀 상태에 추가<br>• 출력 게이트(o_t): 셀 상태에서 출력할 정보 선택"},
+
+{topic:"GRU vs LSTM",d:2,
+q:`<p>GRU(Gated Recurrent Unit)가 LSTM에 비해 갖는 특성으로 옳은 것은?</p>`,
+hint:"GRU는 LSTM을 단순화한 구조입니다. 게이트 수를 비교해보세요.",
+opts:["게이트가 4개로 LSTM보다 복잡하다","게이트가 2개(리셋, 업데이트)로 LSTM보다 파라미터가 적고 학습이 빠르다","항상 LSTM보다 성능이 좋다","셀 상태(cell state)를 별도로 유지한다"],ans:1,
+exp:"<strong>GRU vs LSTM</strong>:<br>• LSTM: 3개 게이트(망각, 입력, 출력) + 셀 상태 → 파라미터 많음<br>• GRU: <strong>2개 게이트</strong>(리셋, 업데이트) + 셀 상태 없음 → <strong>파라미터 적음</strong><br>• GRU가 학습이 빠르고 데이터 적을 때 유리한 경우 많음<br>• 성능은 태스크에 따라 다름 (항상 어느 한쪽이 우세하지 않음)"},
+
+{topic:"BERT vs GPT",d:2,
+q:`<p>BERT와 GPT의 구조적 차이에 대한 설명으로 옳은 것은?</p>`,
+hint:"BERT는 Bidirectional, GPT는 왼쪽에서 오른쪽(autoregressive)입니다.",
+opts:["BERT는 Decoder만, GPT는 Encoder만 사용한다","BERT는 양방향(bidirectional) Encoder, GPT는 단방향(autoregressive) Decoder를 사용한다","두 모델 모두 동일한 학습 방식을 사용한다","GPT가 BERT보다 항상 분류 태스크에서 우수하다"],ans:1,
+exp:"<strong>BERT</strong>:<br>• Transformer <strong>Encoder</strong> 사용<br>• <strong>양방향</strong>: 문장의 앞뒤 문맥을 모두 참조<br>• 학습: MLM (Masked Language Model) + NSP<br><br><strong>GPT</strong>:<br>• Transformer <strong>Decoder</strong> 사용<br>• <strong>단방향</strong>(왼→오): 이전 토큰만 참조 (autoregressive)<br>• 학습: 다음 토큰 예측 (Causal LM)"},
+
+{topic:"데이터 증강",d:1,
+q:`<p>이미지 분류에서 <strong>데이터 증강(Data Augmentation)</strong>의 목적으로 옳은 것은?</p>`,
+hint:"학습 데이터의 다양성을 인위적으로 늘리는 것입니다.",
+opts:["테스트 데이터의 양을 늘린다","학습 데이터를 변형하여 다양성을 높이고 과대적합을 방지한다","모델의 파라미터 수를 줄인다","학습 속도를 높인다"],ans:1,
+exp:"<strong>데이터 증강</strong>의 효과:<br>• 회전, 반전, 크롭, 색상 변환 등으로 <strong>학습 데이터 다양성 증가</strong><br>• 모델이 변환에 불변(invariant)하도록 학습<br>• → <strong>과대적합 방지</strong>, 일반화 성능 향상<br>• 주의: 의미가 변하는 변환은 피해야 함 (예: 숫자 6↔9 회전)"},
+
+{topic:"Layer Normalization",d:2,
+q:`<p>Layer Normalization이 Batch Normalization과 다른 점으로 옳은 것은?</p>`,
+hint:"정규화하는 축(dimension)이 다릅니다.",
+opts:["배치 차원에 대해 정규화한다","개별 샘플의 특성(feature) 차원에 대해 정규화하여 배치 크기에 의존하지 않는다","항상 Batch Normalization보다 성능이 좋다","학습 가능한 파라미터가 없다"],ans:1,
+exp:"<strong>Layer Normalization vs Batch Normalization</strong>:<br>• BN: <strong>배치 차원</strong>에 대해 정규화 → 배치 크기에 의존<br>• LN: <strong>특성 차원</strong>에 대해 정규화 → 배치 크기와 <strong>무관</strong><br>• LN의 장점: 배치 크기 1에서도 작동, RNN/Transformer에 적합<br>• Transformer에서는 LN이 표준으로 사용됨"},
+
+{topic:"코사인 유사도",d:1,
+q:`<p>임베딩 공간에서 <strong>코사인 유사도(Cosine Similarity)</strong>에 대한 설명으로 옳은 것은?</p>
+<p><code class="math">cos(A, B) = (A · B) / (||A|| × ||B||)</code></p>`,
+hint:"코사인 유사도는 두 벡터 사이의 각도를 기반으로 합니다.",
+opts:["두 벡터의 유클리드 거리를 측정한다","두 벡터의 방향(각도)이 유사할수록 1에 가깝고 반대 방향이면 -1에 가깝다","값의 범위는 0에서 1이다","벡터의 크기(magnitude)에 크게 영향받는다"],ans:1,
+exp:"<strong>코사인 유사도</strong>:<br>• 범위: <strong>-1 ~ 1</strong><br>• 1: 같은 방향 (유사)<br>• 0: 직교 (무관)<br>• -1: 반대 방향 (반대)<br>• 벡터의 <strong>크기에 무관</strong>, 방향만 비교<br>• 텍스트 임베딩, 추천 시스템에서 널리 사용"},
+
+{topic:"Early Stopping",d:1,
+q:`<p>신경망 학습에서 <strong>Early Stopping</strong>에 대한 설명으로 옳은 것은?</p>`,
+hint:"검증 손실(validation loss)의 변화를 모니터링합니다.",
+opts:["학습 손실이 0이 되면 학습을 중단한다","검증 손실이 더 이상 감소하지 않을 때 학습을 조기 중단하여 과대적합을 방지한다","항상 정해진 에포크 수만큼 학습한 후 중단한다","학습률이 0이 되면 자동으로 중단한다"],ans:1,
+exp:"<strong>Early Stopping</strong>:<br>• 매 에포크마다 <strong>검증 손실</strong>을 모니터링<br>• 검증 손실이 patience 에포크 동안 개선되지 않으면 <strong>학습 중단</strong><br>• 과대적합이 시작되기 전의 가중치를 사용<br>• 간단하면서도 효과적인 <strong>정규화 기법</strong><br>• 보통 가장 좋은 검증 성능의 모델을 저장(checkpoint)"},
+
+/* ═══════════════════════════════════════════════════
+   주관식 (Q41 ~ Q45)
+   ═══════════════════════════════════════════════════ */
+{topic:"코드 출력 계산",d:1,type:'sa',
+q:`<p>다음 코드의 출력값을 쓰시오.</p>
+<pre>import numpy as np
+a = np.array([[1, 2, 3],
+              [4, 5, 6]])
+print(a.sum(axis=1).tolist())</pre>`,
+hint:"axis=1은 행 방향(각 행 내에서)으로 합산합니다.",
+ans:["[6, 15]"],
+exp:"<code>a.sum(axis=1)</code>은 각 행의 원소를 합산합니다.<br>• 첫 번째 행: 1+2+3 = <strong>6</strong><br>• 두 번째 행: 4+5+6 = <strong>15</strong><br>결과: <strong>[6, 15]</strong>"},
+
+{topic:"ML 용어 빈칸",d:1,type:'sa',
+q:`<p>학습 데이터에서 소수 클래스의 샘플 사이를 <strong>보간(interpolation)</strong>하여 합성 샘플을 생성하는 오버샘플링 기법의 이름을 영어 약어로 쓰시오.</p>`,
+hint:"Synthetic Minority Over-sampling Technique의 약자입니다.",
+ans:["SMOTE","smote"],
+exp:"<strong>SMOTE</strong> = Synthetic Minority Over-sampling Technique<br>• 소수 클래스 샘플의 K-최근접 이웃 사이에서 합성 샘플을 생성<br>• 단순 복제보다 과대적합 위험이 적음"},
+
+{topic:"수치 계산",d:2,type:'sa',
+q:`<p>3x3 합성곱 필터(커널)가 16개이고, 입력 채널이 3(RGB)일 때 이 합성곱 레이어의 학습 가능한 파라미터 수를 구하시오. (bias 포함)</p>`,
+hint:"파라미터 수 = (커널 크기 × 입력 채널 × 필터 수) + bias(필터 수)",
+ans:["448"],
+exp:"합성곱 레이어 파라미터 수:<br>• 가중치: 3 × 3 × 3 × 16 = <strong>432</strong><br>• 편향(bias): 필터당 1개 × 16 = <strong>16</strong><br>• 총 파라미터: 432 + 16 = <strong>448</strong>"},
+
+{topic:"DL 개념 용어",d:2,type:'sa',
+q:`<p>신경망에서 학습 시 무작위로 뉴런의 일부를 비활성화하여 과대적합을 방지하는 정규화 기법의 이름을 영어로 쓰시오.</p>`,
+hint:"Drop과 out을 합친 단어입니다.",
+ans:["Dropout","dropout","드롭아웃"],
+exp:"<strong>Dropout</strong>:<br>• 학습 시 각 뉴런을 확률 p로 무작위 비활성화<br>• 추론 시에는 모든 뉴런 사용 (출력 스케일 보정)<br>• 뉴런 간 co-adaptation 방지 → 일반화 성능 향상"},
+
+{topic:"코드 빈칸 채우기",d:1,type:'sa',
+q:`<p>다음 PyTorch 코드에서 빈칸에 들어갈 메서드 이름을 쓰시오.</p>
+<pre>optimizer = torch.optim.SGD(model.parameters(), lr=0.01)
+optimizer.____()      # 이전 그래디언트 초기화
+output = model(input)
+loss = criterion(output, target)
+loss.backward()
+optimizer.step()</pre>`,
+hint:"그래디언트를 0으로 초기화하는 메서드입니다. zero로 시작합니다.",
+ans:["zero_grad","zero_grad()"],
+exp:"<code>optimizer.zero_grad()</code>는 모든 파라미터의 그래디언트를 <strong>0으로 초기화</strong>합니다.<br>PyTorch는 기본적으로 그래디언트를 <strong>누적</strong>하므로, 매 반복 시작 전에 반드시 초기화해야 합니다.<br>순서: zero_grad → forward → backward → step"}
+]; // end DATA
+
+/* ─── state ─── */
+let cq=0;
+let submitted=false;
+let ST=Array.from({length:TOTAL},()=>({sel:null}));
+const ST_KEY='koai2026-practice-2v2';
+
+function saveState(){localStorage.setItem(ST_KEY,JSON.stringify({cq,submitted,ST}));}
+function loadState(){
+  try{
+    const d=JSON.parse(localStorage.getItem(ST_KEY));
+    if(d&&d.ST&&d.ST.length===TOTAL){cq=d.cq;ST=d.ST;submitted=!!d.submitted;}
+  }catch(e){}
+}
+
+function isAnswered(i){
+  const s=ST[i];
+  if(DATA[i].type==='sa') return s.sel!==null&&String(s.sel).trim()!=='';
+  return s.sel!==null;
+}
+function isCorrect(i){
+  const q=DATA[i],s=ST[i];
+  if(q.type==='sa'){
+    if(!s.sel) return false;
+    const input=String(s.sel).trim().toLowerCase().replace(/\s+/g,'');
+    return q.ans.some(a=>a.toLowerCase().replace(/\s+/g,'')===input);
+  }
+  return s.sel===q.ans;
+}
+
+function getSectionOf(qi){
+  for(const s of SECTIONS) if(qi>=s.start&&qi<s.start+s.count) return s;
+  return SECTIONS[0];
+}
+
+function init(){
+  loadState();
+  renderTabs();
+  renderAll();
+}
+
+/* ─── tabs ─── */
+function renderTabs(){
+  const el=document.getElementById('tabs');
+  el.innerHTML=SECTIONS.map((s,i)=>{
+    const active=getSectionOf(cq)===s;
+    return `<button class="tab${active?' active':''}" onclick="jumpToSection(${i})">
+      ${s.name}<span class="tab-score" id="tab-sc-${i}"></span>
+    </button>`;
+  }).join('');
+}
+
+function updateTabScores(){
+  SECTIONS.forEach((s,i)=>{
+    const el=document.getElementById('tab-sc-'+i);
+    if(!el) return;
+    if(submitted){
+      let ok=0;
+      for(let j=s.start;j<s.start+s.count;j++) if(isCorrect(j)) ok++;
+      el.textContent=`${ok}/${s.count}`;
+    } else {
+      let answered=0;
+      for(let j=s.start;j<s.start+s.count;j++) if(isAnswered(j)) answered++;
+      el.textContent=answered>0?`${answered}/${s.count}`:'';
+    }
+  });
+}
+
+function jumpToSection(si){
+  cq=SECTIONS[si].start;
+  saveState();
+  renderAll();
+}
+
+/* ─── main render ─── */
+function renderAll(){
+  renderTabs();
+  updateTabScores();
+  renderDots();
+  renderQ();
+  renderNav();
+  renderSubmitArea();
+}
+
+/* ─── progress dots ─── */
+function renderDots(){
+  const answered=ST.filter((_,i)=>isAnswered(i)).length;
+
+  if(submitted){
+    const ok=ST.filter((_,i)=>isCorrect(i)).length;
+    document.getElementById('prog-txt').textContent=`${ok} / ${TOTAL} 정답`;
+  } else {
+    document.getElementById('prog-txt').textContent=`응답 ${answered} / ${TOTAL}`;
+  }
+
+  let html='<div class="q-dots">';
+  for(let i=0;i<TOTAL;i++){
+    let c='dot';
+    if(i===cq) c+=' cur';
+    if(submitted){
+      if(isCorrect(i)) c+=' ok';
+      else c+=' no';
+    } else {
+      if(isAnswered(i)) c+=' sel';
+    }
+    html+=`<div class="${c}" onclick="jumpTo(${i})">${i+1}</div>`;
+  }
+  html+=`</div>`;
+  document.getElementById('dots-area').innerHTML=html;
+}
+
+/* ─── question card ─── */
+function renderQ(){
+  const q=DATA[cq];
+  const s=ST[cq];
+  const sec=getSectionOf(cq);
+  document.getElementById('q-num').textContent=`Q${cq+1}`;
+  document.getElementById('q-topic').textContent=q.topic;
+  document.getElementById('q-body').innerHTML=q.q;
+
+  const optsEl=document.getElementById('opts');
+  if(q.type==='sa'){
+    const val=s.sel||'';
+    let ic='sa-input';
+    if(submitted){ic+=' locked';ic+=isCorrect(cq)?' g-correct':' g-wrong';}
+    optsEl.innerHTML=`<div class="sa-input-wrap">
+      <input type="text" class="${ic}" id="sa-field"
+        value="${val.replace(/"/g,'&quot;')}"
+        placeholder="답을 입력하세요"
+        ${submitted?'readonly':''}
+        oninput="updateSA(this.value)">
+      ${submitted?`<div class="sa-correct-ans">정답: ${q.ans[0]}</div>`:''}
+    </div>`;
+  } else {
+    optsEl.innerHTML=q.opts.map((o,i)=>{
+      let c='opt';
+      if(submitted){
+        c+=' locked';
+        if(i===q.ans) c+=' g-correct';
+        else if(i===s.sel&&s.sel!==q.ans) c+=' g-wrong';
+      } else {
+        if(s.sel===i) c+=' selected';
+      }
+      return `<div class="${c}" onclick="selectOpt(${i})">
+        <span class="opt-lbl">${LBL[i]}</span>
+        <span class="opt-txt">${o}</span>
+      </div>`;
+    }).join('');
+  }
+
+  const gb=document.getElementById('grade-banner');
+  const eb=document.getElementById('exp-box');
+  if(submitted){
+    const correct=isCorrect(cq);
+    gb.className='grade-banner show '+(correct?'correct':'wrong');
+    if(q.type==='sa'){
+      gb.innerHTML=correct
+        ?'<span class="grade-icon">O</span><span><strong>정답!</strong></span>'
+        :'<span class="grade-icon">X</span><span><strong>오답.</strong></span>';
+    } else {
+      gb.innerHTML=correct
+        ?'<span class="grade-icon">O</span><span><strong>정답!</strong> 잘 풀었어요.</span>'
+        :'<span class="grade-icon">X</span><span><strong>오답.</strong> 정답은 <strong>'+LBL[q.ans]+'</strong>입니다.</span>';
+    }
+    document.getElementById('exp-body').innerHTML=q.exp;
+    eb.classList.add('show');
+  } else {
+    gb.className='grade-banner';
+    eb.classList.remove('show');
+  }
+}
+
+/* ─── navigation ─── */
+function renderNav(){
+  document.getElementById('btn-prev').disabled=cq===0;
+  const nb=document.getElementById('btn-next');
+
+  nb.textContent='다음 →';
+  nb.onclick=()=>move(1);
+  nb.disabled=cq===TOTAL-1;
+}
+
+/* ─── submit area ─── */
+function renderSubmitArea(){
+  const btn=document.getElementById('btn-submit');
+  const restartBtn=document.getElementById('btn-restart-nav');
+  const resultsBtn=document.getElementById('btn-results-side');
+
+  if(submitted){
+    btn.style.display='none';
+    restartBtn.style.display='';
+    resultsBtn.style.display='';
+    return;
+  }
+  btn.style.display='';
+  restartBtn.style.display='none';
+  resultsBtn.style.display='none';
+
+  const answered=ST.filter((_,i)=>isAnswered(i)).length;
+  const remaining=TOTAL-answered;
+
+  if(remaining===0){
+    btn.disabled=false;
+    btn.classList.add('ready');
+    btn.textContent='제출하기';
+  } else {
+    btn.disabled=true;
+    btn.classList.remove('ready');
+    btn.textContent=`${remaining}문항 미응답`;
+  }
+}
+
+/* ─── select option ─── */
+function selectOpt(i){
+  if(submitted) return;
+  ST[cq].sel=ST[cq].sel===i?null:i;
+  saveState();
+  renderAll();
+}
+function updateSA(val){
+  if(submitted) return;
+  ST[cq].sel=val;
+  saveState();
+  renderDots();
+  renderSubmitArea();
+}
+
+/* ─── submit all ─── */
+function submitAll(){
+  const answered=ST.filter((_,i)=>isAnswered(i)).length;
+  if(answered<TOTAL) return;
+  /* show confirm dialog */
+  const overlay=document.createElement('div');
+  overlay.className='submit-confirm';
+  overlay.innerHTML=`<div class="confirm-box">
+    <h3>답안을 제출하시겠습니까?</h3>
+    <p>제출 후에는 답을 변경할 수 없습니다.<br>45문항이 한 번에 채점됩니다.</p>
+    <div class="confirm-btns">
+      <button class="cf-no" onclick="this.closest('.submit-confirm').remove()">취소</button>
+      <button class="cf-yes" onclick="confirmSubmit()">제출하기</button>
+    </div>
+  </div>`;
+  document.body.appendChild(overlay);
+  overlay.addEventListener('click',e=>{if(e.target===overlay)overlay.remove();});
+}
+
+function confirmSubmit(){
+  document.querySelector('.submit-confirm')?.remove();
+  submitted=true;
+  saveState();
+  renderAll();
+  showScore();
+}
+
+function move(dir){cq=Math.max(0,Math.min(TOTAL-1,cq+dir));saveState();renderAll();}
+function jumpTo(i){cq=i;saveState();renderAll();}
+
+/* ─── score screen ─── */
+function showScore(){
+  document.getElementById('quiz-view').style.display='none';
+  const ss=document.getElementById('score-screen');
+  ss.classList.add('show');
+  const ok=ST.filter((_,i)=>isCorrect(i)).length;
+  const pct=Math.round(ok/TOTAL*100);
+  const grades=[
+    {s:95,g:'S',c:'#1c6b3e'},{s:90,g:'A+',c:'#1c6b3e'},{s:80,g:'A',c:'#1c6b3e'},
+    {s:70,g:'B+',c:'#1d6b5f'},{s:60,g:'B',c:'#1d6b5f'},
+    {s:50,g:'C+',c:'#b7892d'},{s:0,g:'C',c:'#a33d2d'}
+  ];
+  const {g,c}=grades.find(x=>pct>=x.s);
+  ss.innerHTML=`
+  <div class="score-hero">
+    <div class="score-grade" style="background:${c}22;color:${c};border:1.5px solid ${c}">${g}</div>
+    <div class="score-num" style="color:${c}">${ok} <span style="font-size:1.8rem;color:var(--muted)">/ ${TOTAL}</span></div>
+    <div class="score-sub">정답률 ${pct}% &nbsp;·&nbsp; KOAI 2026 제2회 예상문제</div>
+    <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${pct}%;background:${c}"></div></div>
+    <div class="section-scores">
+      ${SECTIONS.map(sec=>{
+        let secOk=0;
+        for(let i=sec.start;i<sec.start+sec.count;i++) if(isCorrect(i)) secOk++;
+        const secCol=secOk===sec.count?'#1c6b3e':secOk>0?'#1d6b5f':'#a33d2d';
+        return `<div class="sec-card">
+          <div class="sec-name">${sec.full}</div>
+          <div class="sec-val" style="color:${secCol}">${secOk}/${sec.count}</div>
+        </div>`;
+      }).join('')}
+    </div>
+  </div>
+  <div class="score-actions">
+    <button class="btn-restart" onclick="restartAll()">다시 풀기</button>
+    <button class="btn-review" onclick="reviewMode()">틀린 문제 복습</button>
+  </div>`;
+}
+
+function restartAll(){
+  ST=Array.from({length:TOTAL},()=>({sel:null}));
+  submitted=false;
+  cq=0;
+  saveState();
+  document.getElementById('score-screen').classList.remove('show');
+  document.getElementById('quiz-view').style.display='';
+  renderAll();
+}
+
+function reviewMode(){
+  const wrongIdx=ST.map((_,i)=>!isCorrect(i)?i:-1).filter(i=>i>=0);
+  if(wrongIdx.length===0){alert('모든 문제를 맞혔습니다!');return;}
+  cq=wrongIdx[0];
+  document.getElementById('score-screen').classList.remove('show');
+  document.getElementById('quiz-view').style.display='';
+  renderAll();
+}
+
+function nextWrong(){
+  const wrongIdx=ST.map((_,i)=>!isCorrect(i)?i:-1).filter(i=>i>=0);
+  if(wrongIdx.length===0){alert('모든 문제를 맞혔습니다!');return;}
+  const next=wrongIdx.find(i=>i>cq);
+  cq=next!==undefined?next:wrongIdx[0];
+  saveState();
+  renderAll();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+window.onload=init;
+</script>
+</body>
+</html>
