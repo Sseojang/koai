@@ -2940,55 +2940,90 @@ ROUNDS.forEach((round, idx)=>{
   round.data.splice(0, 40, ...buildObjectiveSet(idx));
 });
 
-function plainOptionText(value){
-  return String(value).replace(/<[^>]*>/g,'').replace(/&[^;]+;/g,'x').trim();
-}
-function hasFinalConsonant(text){
-  const char=text.trim().slice(-1);
-  const code=char.charCodeAt(0);
-  return code>=0xac00&&code<=0xd7a3&&(code-0xac00)%28!==0;
-}
-function extendDistractor(option, questionIndex){
-  const plain=plainOptionText(option);
-  const resultLike=/^(\[|\(|\{|<|\d|tensor|TypeError|ValueError|KeyError|RuntimeError|오류|Error)/.test(plain);
-  if(resultLike){
-    const tails=[
-      "이며 문제 조건에서 이 결과가 항상 출력된다고 판단한다",
-      "이며 주어진 코드 흐름상 이 결과로 해석하는 것이 가장 적절하다",
-      "이고 예외 처리까지 고려해도 이 결과가 최종 출력이라고 볼 수 있다",
-      "이며 입력 조건을 그대로 적용하면 이 결과가 반드시 나온다"
-    ];
-    return `${option} ${tails[questionIndex%tails.length]}`;
-  }
-  if(/다$/.test(plain)){
-    return `${option}는 설명이 문제 조건을 모두 만족하며 예외 조건까지 고려해도 그대로 선택할 수 있다`;
-  }
-  const particle=hasFinalConsonant(plain)?"이":"가";
-  return `${option}${particle} 문제 조건의 핵심 기준을 가장 직접적으로 만족하며 예외 조건까지 고려해도 그대로 선택할 수 있다`;
-}
-function balanceObjectiveOptionLengths(){
+const OBJECTIVE_OPTION_REWRITES={
+  "predict":"predict: 학습된 모델의 예측값 반환",
+  "transform":"transform: 학습된 기준으로 데이터 변환",
+  "backward":"backward: 계산 그래프의 gradient 계산",
+  "zero_grad":"zero_grad: 누적 gradient 초기화",
+  "squeeze":"squeeze: 크기 1인 축 제거",
+  "transpose":"transpose: 두 축의 순서 교환",
+  "detach":"detach: autograd 그래프에서 분리",
+  "이전 모델의 잔차 또는 손실의 음의 그래디언트":"잔차/음의 기울기",
+  "군집이 병합될 때의 거리 또는 비유사도":"병합 거리",
+  "입력을 잠재 공간으로 압축했다가 다시 복원한다":"잠재공간 압축 후 복원",
+  "큰 가중치 행렬의 변화량을 저랭크 행렬로 근사해 일부 파라미터만 학습한다":"저랭크 행렬만 추가 학습",
+  "SimCLR, MoCo 같은 대조 학습 또는 MAE 같은 마스킹 기반 학습":"대조 학습 또는 마스킹 학습",
+  "사전학습 가중치로 초기화하고 분류기 또는 일부 층을 미세조정한다":"사전학습 가중치 미세조정",
+  "같은 층 뉴런들이 동일하게 학습되는 대칭성 문제가 생긴다":"동일 뉴런 대칭성 문제",
+  "소수 클래스 샘플 사이를 보간해 합성 샘플을 만든다":"소수 클래스 보간",
+  "L1은 일부 가중치를 0으로 만들어 특성 선택 효과가 있을 수 있다":"L1의 희소화 효과",
+  "학습 시 일부 뉴런을 확률적으로 비활성화해 과대적합을 줄인다":"학습 중 뉴런 일부 비활성화",
+  "이전 토큰들이 주어졌을 때 다음 토큰 확률을 예측한다":"이전 토큰 기반 다음 토큰 예측",
+  "특성들이 클래스가 주어졌을 때 조건부 독립이라고 가정한다":"클래스 조건부 독립 가정",
+  "잔차 연결을 통해 깊은 네트워크 학습을 쉽게 한다":"잔차 연결로 깊은 학습 보조",
+  "데이터에 노이즈를 점진적으로 추가한 뒤 역과정의 노이즈 제거를 학습한다":"노이즈 추가 후 역과정 학습",
+  "학습 가능한 가중치를 반드시 추가한다":"가중치를 반드시 학습",
+  "이산 토큰을 의미 정보를 담은 연속 벡터로 사상한다":"이산 토큰의 연속 벡터화",
+  "-1에서 1 사이이며 1에 가까울수록 군집 분리가 좋다":"1에 가까울수록 분리 좋음",
+  "인코더-디코더와 동일 해상도 단위 간 스킵 연결":"동일 해상도 스킵 연결",
+  "음이 아닌 성분으로 부분 기반 표현을 해석하기 쉽다":"음이 아닌 부분 기반 표현",
+  "데이터를 k개 폴드로 나누고 매번 1개를 검증에 사용한다":"k개 폴드 중 1개 검증",
+  "Gradient Boosting은 모든 트리를 동시에 학습해 평균만 낸다":"부스팅 트리 동시 평균",
+  "오분류 페널티가 커져 과대적합 위험이 증가한다":"큰 C는 오분류 페널티 증가",
+  "평균제곱오차":"평균제곱오차(MSE)",
+  "Softmax + Cross Entropy":"Softmax+CE",
+  "weight decay를 그래디언트에 섞지 않고 분리 적용한다":"분리된 weight decay",
+  "생성자와 판별자가 서로 경쟁하는 미니맥스 게임으로 학습한다":"생성자-판별자 경쟁 학습",
+  "출력층에서 입력층 방향으로 연쇄법칙을 사용해 그래디언트를 계산한다":"연쇄법칙 기반 그래디언트 계산",
+  "기본 인자가 함수 정의 시점에 한 번 평가되어 호출 사이에 공유될 수 있기 때문이다":"정의 시점에 한 번 평가됨",
+  "뒤쪽 차원부터 비교해 크기가 같거나 둘 중 하나가 1이면 확장될 수 있다":"뒤쪽 축부터 크기 호환 확인",
+  "각 군집 소속 확률을 제공할 수 있다":"군집 소속 확률 제공",
+  "메모리 효율적이고 노이즈가 일반화에 도움될 수 있다":"메모리 효율과 일반화 노이즈",
+  "무작위 분류기와 비슷한 수준":"무작위 수준",
+  "환불 여부로 구매 취소를 예측한다":"사후 정보 사용",
+  "두 그룹 평균 차이를 표준편차 단위로 표준화한 효과 크기":"표준화 효과크기",
+  "내적값이 너무 커져 softmax가 포화되는 것을 막기 위해서":"softmax 포화 방지",
+  "미래 데이터가 학습에 들어가는 누수를 막기 위해서":"미래 데이터 누수 방지",
+  "축의 절댓값과 군집 간 절대 거리는 항상 의미가 있다":"축과 절대거리 과해석",
+  "유의수준을 검정 횟수로 나누어 각 검정에 적용한다":"α를 검정 횟수로 나눔",
+  "학습 데이터에는 매우 잘 맞지만 과대적합 위험이 크다":"과대적합 위험 증가",
+  "유사도 그래프와 라플라시안 고유벡터를 이용한다":"그래프 라플라시안 고유벡터",
+  "다중공선성이 심할 가능성이 높다":"다중공선성 가능성 높음",
+  "학습 손실은 낮지만 검증 손실이 훨씬 높다":"학습-검증 손실 격차 큼",
+  "YOLO는 단일 단계 탐지 계열이고 DETR은 트랜스포머와 집합 예측을 사용한다":"YOLO 단일단계, DETR 집합예측",
+  "DETR은 항상 RPN만 사용한다":"DETR은 RPN 기반 두 단계 탐지 모델이다",
+  "device가 일치하지 않는다는 RuntimeError가 발생할 수 있다":"device 불일치 RuntimeError",
+  "모델이 자동으로 CPU로 복사된다":"모델과 텐서가 자동으로 같은 device로 복사된다",
+  "테스트 셋에 간접적으로 과적합되어 성능이 과대평가될 수 있다":"테스트 셋 과적합",
+  "BIC는 데이터 수가 커질수록 복잡한 모델에 더 강한 패널티를 부과한다":"BIC의 복잡도 패널티 강화",
+  "이미지와 텍스트를 공유 임베딩 공간으로 사상하도록 대조 학습한다":"이미지-텍스트 대조 임베딩",
+  "여러 선형층을 쌓아도 하나의 선형 변환과 동등하다":"선형층만 쌓으면 선형 변환",
+  "Masked Language Modeling":"마스크 언어모델링",
+  "예측 확률과 실제 빈도가 잘 일치한다":"확률과 실제 빈도 일치",
+  "score가 80 이상인 행만 선택한다":"score 80 이상 행 선택",
+  "분할 시 불순도 감소량의 평균":"불순도 감소량 평균",
+  "손실이 발산하거나 진동한다":"손실 발산 또는 진동",
+  "이상치는 무작위 분할에서 더 적은 단계로 고립되는 경향이 있다":"적은 분할로 고립",
+  "데이터 분산을 가장 크게 설명하는 방향":"최대 분산 방향",
+  "정답 레이블을 이미지 픽셀에 직접 표시":"레이블을 픽셀에 표시",
+  "무한 차원 특성 공간에 대응되는 효과를 낼 수 있다":"고차원 특성 공간 효과",
+  "그래디언트가 기본적으로 누적되기 때문이다":"그래디언트 누적",
+  "패딩으로 길이를 맞추고 마스크로 패딩 위치를 구분한다":"패딩과 마스크 적용",
+  "가능한 경우 원본 메모리를 공유하는 view가 만들어질 수 있다":"가능하면 메모리 공유 view",
+  "[[11, 12, 13], [21, 22, 23], [31, 32, 33]]":"3x3 배열: 11~33 패턴",
+  "ValueError 발생":"ValueError: shape 호환 실패",
+  "코사인 유사도":"코사인 거리",
+  "지니 불순도":"지니 불순도 감소",
+  "정보 이득":"정보 이득 기준"
+};
+function rewriteObjectiveOptions(){
   ROUNDS.forEach(round=>{
-    round.data.slice(0,40).forEach((q, questionIndex)=>{
-      if(!q.opts||typeof q.ans!=="number") return;
-      const lengths=q.opts.map(plainOptionText).map(text=>text.length);
-      const correctLength=lengths[q.ans];
-      const longestWrongLength=Math.max(...lengths.filter((_,idx)=>idx!==q.ans));
-      if(correctLength<longestWrongLength) return;
-      let target=0;
-      let shortestWrongLength=Infinity;
-      lengths.forEach((length,idx)=>{
-        if(idx!==q.ans&&length<shortestWrongLength){
-          shortestWrongLength=length;
-          target=idx;
-        }
-      });
-      while(plainOptionText(q.opts[target]).length<=correctLength){
-        q.opts[target]=extendDistractor(q.opts[target], questionIndex);
-      }
+    round.data.slice(0,40).forEach(q=>{
+      if(q.opts) q.opts=q.opts.map(option=>OBJECTIVE_OPTION_REWRITES[option]||option);
     });
   });
 }
-balanceObjectiveOptionLengths();
+rewriteObjectiveOptions();
 
 const DESCRIPTIVE_SETS=[
 [
