@@ -350,7 +350,7 @@ const SECTIONS=[
   {name:'1-4 데이터사이언스',full:'1-4. 데이터 사이언스 기초',subj:'1과목',start:18,count:7},
   {name:'2-1 신경망',full:'2-1. 신경망',subj:'2과목',start:25,count:6},
   {name:'2-2 딥러닝',full:'2-2. 딥러닝',subj:'2과목',start:31,count:9},
-  {name:'서술형',full:'서술형',subj:'전 범위',start:40,count:5}
+  {name:'서술형',full:'서술형',subj:'1·2과목',start:40,count:5}
 ];
 
 const ROUNDS=[
@@ -2940,6 +2940,56 @@ ROUNDS.forEach((round, idx)=>{
   round.data.splice(0, 40, ...buildObjectiveSet(idx));
 });
 
+function plainOptionText(value){
+  return String(value).replace(/<[^>]*>/g,'').replace(/&[^;]+;/g,'x').trim();
+}
+function hasFinalConsonant(text){
+  const char=text.trim().slice(-1);
+  const code=char.charCodeAt(0);
+  return code>=0xac00&&code<=0xd7a3&&(code-0xac00)%28!==0;
+}
+function extendDistractor(option, questionIndex){
+  const plain=plainOptionText(option);
+  const resultLike=/^(\[|\(|\{|<|\d|tensor|TypeError|ValueError|KeyError|RuntimeError|오류|Error)/.test(plain);
+  if(resultLike){
+    const tails=[
+      "이며 문제 조건에서 이 결과가 항상 출력된다고 판단한다",
+      "이며 주어진 코드 흐름상 이 결과로 해석하는 것이 가장 적절하다",
+      "이고 예외 처리까지 고려해도 이 결과가 최종 출력이라고 볼 수 있다",
+      "이며 입력 조건을 그대로 적용하면 이 결과가 반드시 나온다"
+    ];
+    return `${option} ${tails[questionIndex%tails.length]}`;
+  }
+  if(/다$/.test(plain)){
+    return `${option}는 설명이 문제 조건을 모두 만족하며 예외 조건까지 고려해도 그대로 선택할 수 있다`;
+  }
+  const particle=hasFinalConsonant(plain)?"이":"가";
+  return `${option}${particle} 문제 조건의 핵심 기준을 가장 직접적으로 만족하며 예외 조건까지 고려해도 그대로 선택할 수 있다`;
+}
+function balanceObjectiveOptionLengths(){
+  ROUNDS.forEach(round=>{
+    round.data.slice(0,40).forEach((q, questionIndex)=>{
+      if(!q.opts||typeof q.ans!=="number") return;
+      const lengths=q.opts.map(plainOptionText).map(text=>text.length);
+      const correctLength=lengths[q.ans];
+      const longestWrongLength=Math.max(...lengths.filter((_,idx)=>idx!==q.ans));
+      if(correctLength<longestWrongLength) return;
+      let target=0;
+      let shortestWrongLength=Infinity;
+      lengths.forEach((length,idx)=>{
+        if(idx!==q.ans&&length<shortestWrongLength){
+          shortestWrongLength=length;
+          target=idx;
+        }
+      });
+      while(plainOptionText(q.opts[target]).length<=correctLength){
+        q.opts[target]=extendDistractor(q.opts[target], questionIndex);
+      }
+    });
+  });
+}
+balanceObjectiveOptionLengths();
+
 const DESCRIPTIVE_SETS=[
 [
 {topic:"과대적합과 과소적합",d:2,type:'essay',
@@ -3159,6 +3209,150 @@ ROUNDS.forEach((round, idx)=>{
   round.data.splice(40, 5, ...DESCRIPTIVE_SETS[idx]);
 });
 
+function essayExp(answer, check){
+  return `<strong>상세 모범답안</strong><br>${answer}<br><br><strong>핵심 확인</strong><br>${check}`;
+}
+const DETAILED_ESSAY_EXPLANATIONS={
+"과대적합과 과소적합":essayExp(
+`과대적합은 모델이 학습 데이터의 특징뿐 아니라 우연한 잡음까지 외워 버린 상태입니다. 그래서 학습 데이터에서는 정확도가 매우 높지만, 처음 보는 검증 데이터나 실제 데이터에서는 성능이 크게 떨어집니다. 반대로 과소적합은 모델이 너무 단순하거나 학습이 부족해서 학습 데이터의 기본 규칙조차 충분히 배우지 못한 상태입니다. 이 경우 학습 데이터와 검증 데이터 성능이 모두 낮게 나타납니다.<br><br>문제의 모델은 학습 데이터 정확도가 99%인데 검증 데이터 정확도는 70%입니다. 학습 데이터에는 거의 완벽하게 맞지만 새 데이터에서는 많이 틀리므로 과대적합에 해당합니다. 즉 모델이 일반적인 규칙을 배웠다기보다 학습 데이터에 너무 맞춰진 상태라고 볼 수 있습니다.<br><br>개선 방법으로는 첫째, 정규화나 Dropout을 사용해 모델이 특정 가중치나 뉴런에 과하게 의존하지 못하게 할 수 있습니다. 둘째, 데이터 증강이나 더 많은 학습 데이터를 사용해 모델이 다양한 예시를 보게 만들 수 있습니다. 셋째, 모델을 단순하게 만들거나 조기 종료를 사용하여 검증 성능이 나빠지기 전에 학습을 멈출 수 있습니다.`,
+`• 과대적합은 학습 성능은 높고 검증 성능은 낮은 상태입니다.<br>• 과소적합은 학습 성능과 검증 성능이 모두 낮은 상태입니다.<br>• 99% 대 70%처럼 차이가 크면 과대적합으로 판단합니다.<br>• 해결책은 정규화, Dropout, 데이터 증강, 모델 단순화, 조기 종료 등이 가능합니다.`),
+"NumPy K-NN 구현":essayExp(
+`K-NN은 새 데이터가 들어왔을 때 학습 데이터 중에서 가장 가까운 k개를 찾고, 그 이웃들이 가장 많이 가진 라벨을 예측값으로 선택하는 방법입니다. 유클리드 거리는 각 특성의 차이를 제곱해서 더한 뒤 제곱근을 취해 계산합니다. NumPy에서는 broadcasting을 이용하면 모든 테스트 샘플과 모든 학습 샘플 사이의 거리를 한 번에 계산할 수 있습니다.<br><pre>def knn_predict(X_train, y_train, X_test, k=5):
+    diff = X_test[:, None, :] - X_train[None, :, :]
+    dist = np.sqrt((diff ** 2).sum(axis=2))
+    nn_idx = np.argsort(dist, axis=1)[:, :k]
+    nn_labels = y_train[nn_idx]
+
+    preds = []
+    for labels in nn_labels:
+        counts = np.bincount(labels)
+        preds.append(np.argmax(counts))
+    return np.array(preds)</pre>위 코드에서 <code>diff</code>의 shape는 테스트 개수 m, 학습 개수 n, 특성 개수 d를 가진 3차원 배열입니다. <code>dist</code>는 각 테스트 데이터와 각 학습 데이터 사이의 거리 행렬이 됩니다. <code>np.argsort</code>로 거리가 작은 순서의 인덱스를 구하고 앞에서 k개만 선택합니다. 마지막으로 <code>np.bincount</code>로 라벨 개수를 세고, <code>np.argmax</code>로 가장 많이 나온 라벨을 선택합니다. 동률이면 <code>argmax</code>가 더 작은 인덱스를 먼저 고르므로 조건도 만족합니다.`,
+`• 거리 행렬을 broadcasting으로 계산해야 합니다.<br>• 가장 가까운 k개의 인덱스를 골라야 합니다.<br>• 이웃 라벨의 다수결로 예측해야 합니다.<br>• 동률일 때 작은 정수 라벨이 선택되도록 처리해야 합니다.`),
+"Transformer Attention":essayExp(
+`셀프 어텐션은 문장 안의 각 토큰이 다른 토큰들을 얼마나 참고해야 하는지 계산하는 방법입니다. 예를 들어 “그 학생은 시험을 잘 봤다”라는 문장에서 “그”가 누구를 가리키는지 이해하려면 주변 단어를 함께 봐야 합니다. 셀프 어텐션은 각 토큰마다 다른 토큰과의 관련도를 계산하고, 중요한 토큰의 정보를 더 많이 가져오도록 가중합을 만듭니다.<br><br>스케일드 닷-프로덕트 어텐션에서는 Query와 Key를 내적해 관련도를 구합니다. 그런데 벡터 차원 <code>d_k</code>가 커지면 내적값도 너무 커질 수 있습니다. 그러면 softmax 결과가 한쪽으로 지나치게 몰려 학습이 불안정해질 수 있습니다. 그래서 <code>√d_k</code>로 나누어 값의 크기를 적당히 줄입니다.<br><br>멀티 헤드 어텐션은 어텐션을 여러 개의 head로 나누어 병렬로 수행하는 구조입니다. 한 head는 문법 관계를 볼 수 있고, 다른 head는 멀리 떨어진 단어의 의미 관계를 볼 수 있습니다. 이렇게 여러 관점을 동시에 보게 하면 표현력이 좋아집니다. 다만 셀프 어텐션 자체는 단어의 순서를 알지 못하므로, Transformer는 위치 인코딩 또는 위치 임베딩을 입력에 더해 순서 정보를 알려 줍니다.`,
+`• 셀프 어텐션은 같은 입력 안의 토큰들이 서로를 참고하는 구조입니다.<br>• <code>√d_k</code>로 나누는 이유는 softmax 포화를 막기 위해서입니다.<br>• 멀티 헤드는 여러 종류의 관계를 동시에 학습하게 합니다.<br>• 위치 인코딩은 토큰 순서를 알려 주기 위해 필요합니다.`),
+"Diffusion Model":essayExp(
+`확산 모델은 깨끗한 데이터에 조금씩 노이즈를 섞어 완전한 노이즈에 가깝게 만드는 정방향 과정과, 그 노이즈를 다시 조금씩 제거해 원래 데이터처럼 만드는 역방향 과정으로 이루어집니다. 정방향 과정은 보통 미리 정해진 규칙입니다. 즉 모델이 학습하는 부분이 아니라, 정해진 단계에 따라 이미지에 가우시안 노이즈를 점점 추가합니다.<br><br>역방향 과정은 모델이 학습해야 하는 부분입니다. 모델은 노이즈가 섞인 이미지와 현재 시간 단계를 입력받고, 그 이미지에 섞인 노이즈 또는 원본 성분을 예측하도록 학습됩니다. 생성할 때는 완전한 노이즈에서 시작해 모델이 예측한 방향으로 노이즈를 조금씩 제거합니다.<br><br>한 번에 이미지를 완성하지 않고 여러 단계로 디노이징을 반복하는 이유는, 완전한 노이즈에서 바로 깨끗한 이미지를 만드는 것이 매우 어렵기 때문입니다. 작은 단계로 나누어 조금씩 복원하면 데이터 분포를 더 안정적으로 따라갈 수 있고, 품질 좋은 이미지를 만들 가능성이 높아집니다.`,
+`• 정방향 과정은 노이즈를 점점 추가하는 고정 과정입니다.<br>• 역방향 과정은 노이즈를 제거해 데이터를 생성하는 학습 과정입니다.<br>• 모델은 노이즈가 섞인 샘플과 시간 정보를 보고 노이즈를 예측합니다.<br>• 여러 단계로 나누어 복원하기 때문에 생성 품질이 좋아집니다.`),
+"BERT, GPT, PEFT":essayExp(
+`BERT는 Transformer의 인코더를 중심으로 만든 언어 모델입니다. 문장 전체를 양방향으로 보고, 중간에 가려진 단어를 맞히는 Masked Language Modeling 방식으로 사전학습합니다. 그래서 문장 분류, 감정 분석, 질의응답처럼 입력 문장을 이해하는 문제에 강합니다.<br><br>GPT는 Transformer의 디코더를 중심으로 만든 자기회귀 언어 모델입니다. 앞의 토큰들이 주어졌을 때 다음 토큰을 예측하는 방식으로 학습합니다. 그래서 글 생성, 대화, 요약, 코드 작성처럼 이어지는 내용을 만들어 내는 작업에 강합니다.<br><br>영화 리뷰 긍·부정 분류에서 라벨이 충분하고 안정적인 분류기를 만들고 싶다면 BERT를 미세조정하는 방식이 좋습니다. 반대로 라벨 데이터가 적고 빠르게 여러 작업을 시도해야 한다면 GPT 계열 모델에 few-shot 예시를 넣어 프롬프팅하는 방식이 유리합니다. LoRA 같은 PEFT는 큰 모델 전체를 다 학습하지 않고 작은 저랭크 행렬이나 어댑터만 학습합니다. 그래서 메모리 사용량과 학습 시간이 줄어들고, 여러 작업별 모델을 가볍게 관리할 수 있습니다.`,
+`• BERT는 인코더 기반, MLM 기반, 이해 작업에 강합니다.<br>• GPT는 디코더 기반, 다음 토큰 예측 기반, 생성 작업에 강합니다.<br>• 미세조정은 라벨 데이터가 있을 때 안정적입니다.<br>• PEFT/LoRA는 일부 작은 파라미터만 학습해 비용을 줄입니다.`),
+"데이터 누수와 검증 설계":essayExp(
+`데이터 누수는 학습 과정에서 검증 데이터나 테스트 데이터의 정보가 몰래 들어가는 상황입니다. 이렇게 되면 실제로는 모르는 정보를 사용한 것이므로 성능이 실제보다 좋게 보입니다. 타겟 누수는 예측해야 하는 정답과 직접 관련된 사후 정보를 특성으로 쓰는 경우입니다. 예를 들어 환불 여부를 이용해 구매 취소를 예측하면, 예측 시점에는 알 수 없는 정보를 사용한 것이므로 타겟 누수입니다.<br><br>전체 데이터에 표준화를 먼저 적용한 뒤 train/test split을 하면 테스트 데이터의 평균과 표준편차가 전처리 기준에 포함됩니다. 모델이 직접 테스트 정답을 본 것은 아니지만, 테스트 데이터 분포 정보가 학습 준비 과정에 들어간 것이므로 올바른 평가가 아닙니다.<br><br>올바른 절차는 먼저 데이터를 train, validation, test로 나누는 것입니다. 그다음 학습 데이터로만 scaler나 imputer를 <code>fit</code>하고, 검증/테스트 데이터에는 <code>transform</code>만 적용합니다. scikit-learn에서는 전처리와 모델을 Pipeline으로 묶고 cross-validation에 넣으면 각 fold마다 전처리 기준이 학습 fold에서만 만들어져 누수를 줄일 수 있습니다.`,
+`• 누수는 평가 데이터 정보가 학습에 들어가는 문제입니다.<br>• 전체 데이터로 전처리 fit을 하면 검증/테스트 통계가 섞입니다.<br>• split을 먼저 하고, 학습 데이터로만 fit해야 합니다.<br>• Pipeline과 교차검증을 함께 쓰면 fold별 누수를 줄일 수 있습니다.`),
+"불균형 분류 평가":essayExp(
+`양성 클래스가 2%뿐인 문제에서 정확도 98%는 좋은 모델처럼 보일 수 있지만, 사실 모든 데이터를 음성이라고만 예측해도 98% 정확도가 나올 수 있습니다. 이런 경우 정확도만 보면 모델이 정말 양성을 잘 찾는지 알 수 없습니다.<br><br>Recall은 실제 양성 중에서 모델이 얼마나 많이 찾아냈는지를 나타냅니다. 병 진단이나 이상 탐지처럼 놓치면 위험한 문제에서는 recall이 중요합니다. Precision은 모델이 양성이라고 예측한 것 중 실제 양성이 얼마나 되는지 나타냅니다. 잘못된 경보가 많으면 비용이 큰 문제에서는 precision이 중요합니다. F1 점수는 precision과 recall의 균형을 하나의 값으로 보여 줍니다. PR-AUC는 양성 클래스가 적을 때 모델의 양성 탐지 성능을 보기 좋습니다.<br><br>분류 임계값을 낮추면 더 많은 샘플을 양성으로 예측합니다. 그래서 실제 양성을 더 많이 잡아 recall은 올라가는 경향이 있습니다. 하지만 양성으로 잘못 예측하는 샘플도 늘어나므로 precision은 내려갈 수 있습니다.`,
+`• 불균형 데이터에서는 정확도만으로 판단하면 위험합니다.<br>• Recall은 실제 양성을 얼마나 찾았는지 보여 줍니다.<br>• Precision은 양성 예측이 얼마나 믿을 만한지 보여 줍니다.<br>• 임계값을 낮추면 보통 recall은 증가하고 precision은 감소합니다.`),
+"CNN과 전이학습":essayExp(
+`작은 이미지 데이터셋에서는 처음부터 CNN을 모두 학습시키면 과대적합이 쉽게 생깁니다. 그래서 ImageNet처럼 큰 데이터로 미리 학습된 CNN을 가져와 사용하는 전이학습이 효과적입니다. CNN의 하위 층은 에지, 선, 색 변화, 질감 같은 기본 특징을 배우고, 이런 특징은 많은 이미지 문제에서 공통으로 쓸 수 있습니다. 따라서 하위 층은 동결하고, 마지막 분류기나 상위 층만 새 데이터에 맞게 학습하는 것이 일반적입니다.<br><br>데이터 증강도 중요합니다. 예를 들어 좌우 반전, 무작위 crop, 회전, 밝기 조절, color jitter 등을 사용하면 모델이 같은 대상을 다양한 모습으로 보게 됩니다. 이렇게 하면 특정 사진 모양을 외우는 것을 줄이고 새 이미지에도 더 잘 일반화할 수 있습니다.<br><br>검증 성능이 정체되면 학습률을 줄이거나 조기 종료를 사용할 수 있습니다. 처음에는 분류기만 학습하고, 이후 일부 상위 층을 unfreeze해서 작은 학습률로 미세조정할 수도 있습니다. 필요하면 weight decay나 dropout을 추가해 과대적합을 더 줄일 수 있습니다.`,
+`• 전이학습은 사전학습 특징을 재사용하는 방법입니다.<br>• 하위 CNN 층은 범용 이미지 특징을 많이 담고 있습니다.<br>• 데이터 증강은 과대적합을 줄이고 일반화를 돕습니다.<br>• 학습률 조정, 조기 종료, 일부 층 미세조정이 주요 전략입니다.`),
+"Seq2Seq와 Attention":essayExp(
+`Seq2Seq 모델에서 인코더는 입력 문장을 읽어 문맥 정보를 담은 표현으로 바꿉니다. 디코더는 이 표현을 바탕으로 목표 문장의 토큰을 하나씩 생성합니다. 예를 들어 영어 문장을 한국어로 번역한다면, 인코더는 영어 문장을 이해하고 디코더는 한국어 단어를 차례대로 만들어 냅니다.<br><br>Teacher Forcing은 학습할 때 디코더의 이전 입력으로 모델이 예측한 토큰이 아니라 실제 정답 토큰을 넣어 주는 방법입니다. 이 방법은 학습 초기에 틀린 예측이 계속 이어지는 것을 줄여 수렴을 빠르고 안정적으로 만듭니다. 하지만 추론할 때는 실제 정답 토큰을 넣을 수 없고 모델 자신의 예측을 다시 사용해야 하므로, 학습 상황과 추론 상황이 달라지는 exposure bias가 생길 수 있습니다.<br><br>기본 Seq2Seq는 입력 문장 전체를 하나의 고정 길이 벡터에 담아야 해서 긴 문장에서 정보가 사라질 수 있습니다. Attention은 디코더가 매 단어를 생성할 때 입력 문장의 어느 위치를 더 봐야 하는지 직접 계산하게 합니다. 그래서 긴 문장에서도 필요한 단어에 집중할 수 있고 번역 품질이 좋아집니다.`,
+`• 인코더는 입력을 문맥 표현으로 만들고 디코더는 출력을 생성합니다.<br>• Teacher Forcing은 정답 이전 토큰을 넣어 학습을 안정화합니다.<br>• 단점은 학습과 추론 방식 차이에서 생기는 exposure bias입니다.<br>• Attention은 고정 길이 벡터 병목을 줄입니다.`),
+"LLM 적용 전략":essayExp(
+`제로샷 프롬프팅은 예시 없이 지시문만으로 모델에게 작업을 시키는 방법입니다. 퓨샷 프롬프팅은 몇 개의 예시를 함께 넣어 원하는 답변 형식을 알려 주는 방법입니다. 이 두 방법은 모델 가중치를 바꾸지 않기 때문에 빠르게 시도할 수 있습니다.<br><br>RAG는 Retrieval-Augmented Generation의 줄임말로, 질문과 관련된 문서를 먼저 검색한 뒤 그 내용을 모델에게 함께 제공해 답변하게 하는 방식입니다. 내부 문서가 자주 바뀌는 회사에서는 모델을 매번 새로 학습시키는 것보다 검색 인덱스를 갱신하는 편이 훨씬 쉽습니다. 또한 어떤 문서를 근거로 답했는지 출처를 보여 주기 쉬워 환각을 줄이는 데 도움이 됩니다.<br><br>미세조정은 특정 작업이나 말투에 맞게 모델 파라미터를 실제로 업데이트하는 방법입니다. 반복되는 업무 형식이 있고 충분한 학습 예시가 있을 때 유리합니다. 품질 평가는 정답 정확성, 문서 근거성, 최신성, 환각 여부, 개인정보/보안 문제, 응답 일관성, 응답 속도 등을 함께 확인해야 합니다.`,
+`• 프롬프팅은 가중치 변경 없이 지시와 예시로 해결합니다.<br>• RAG는 검색 문서를 넣어 최신성과 근거성을 높입니다.<br>• 미세조정은 모델 파라미터를 작업에 맞게 업데이트합니다.<br>• 평가는 정확성, 근거성, 보안, 환각, 지연시간까지 봐야 합니다.`),
+"군집화 방법 비교":essayExp(
+`K-means는 데이터를 K개의 중심점에 가장 가깝게 배정하는 중심 기반 군집화입니다. 계산이 빠르고 이해하기 쉽지만, 군집 수 K를 미리 정해야 하며 둥근 모양의 군집에 잘 맞습니다. 초깃값에 따라 결과가 달라질 수도 있습니다.<br><br>DBSCAN은 점들이 얼마나 밀집해 있는지를 기준으로 군집을 찾습니다. K를 미리 정하지 않아도 되고, 노이즈 포인트를 따로 표시할 수 있으며, 비볼록 형태의 군집에도 비교적 강합니다. 하지만 <code>eps</code>와 <code>min_samples</code> 설정이 중요하고, 밀도가 서로 많이 다른 데이터에서는 어려울 수 있습니다.<br><br>계층적 군집화는 가까운 데이터나 군집을 차례대로 합치거나 나누며 덴드로그램을 만듭니다. 군집이 어떻게 합쳐지는지 시각적으로 해석하기 좋지만 데이터가 커지면 계산량이 커질 수 있습니다. 비볼록 군집과 노이즈가 많은 상황에서는 보통 DBSCAN이 더 적합합니다. 정답 레이블이 없을 때는 실루엣 점수나 Davies-Bouldin 지수 같은 내부 지표를 사용할 수 있습니다.`,
+`• K-means는 중심 기반이고 빠르지만 K와 군집 모양에 민감합니다.<br>• DBSCAN은 밀도 기반이며 노이즈와 비볼록 군집에 강합니다.<br>• 계층적 군집화는 덴드로그램 해석이 가능합니다.<br>• 실루엣 점수 등으로 정답 없는 군집 품질을 평가할 수 있습니다.`),
+"앙상블 모델 설계":essayExp(
+`Random Forest는 여러 개의 의사결정 트리를 독립적으로 학습시키고 결과를 평균 또는 투표로 합치는 앙상블입니다. 각 트리는 bootstrap 샘플을 사용하고, 분할할 때 일부 특성만 무작위로 고려합니다. 그래서 트리들이 서로 조금씩 다르게 학습되어 단일 트리보다 안정적이고 과대적합이 줄어듭니다.<br><br>Gradient Boosting은 여러 모델을 순차적으로 학습합니다. 처음 모델이 틀린 부분이나 남긴 오차를 다음 모델이 보완하고, 이런 방식으로 손실을 점점 줄입니다. Random Forest가 여러 트리를 비교적 병렬적으로 만드는 방식이라면, Gradient Boosting은 이전 모델의 실수를 다음 모델이 따라가며 고치는 방식입니다.<br><br>Random Forest의 기본 특성 중요도는 각 특성이 트리 분할에서 불순도를 얼마나 줄였는지를 평균해 계산할 수 있습니다. 스태킹을 사용할 때는 데이터 누수를 조심해야 합니다. 메타 모델을 학습할 때 원래 학습 데이터에 대한 단순 예측값을 쓰면 과대평가될 수 있으므로, out-of-fold 예측으로 메타 모델의 학습 데이터를 만들어야 합니다.`,
+`• Random Forest는 독립적인 여러 트리를 투표/평균합니다.<br>• Gradient Boosting은 이전 오차를 순차적으로 보완합니다.<br>• 특성 중요도는 불순도 감소량 등으로 볼 수 있습니다.<br>• 스태킹에서는 out-of-fold 예측으로 누수를 막아야 합니다.`),
+"객체 탐지 모델":essayExp(
+`YOLO 계열 모델은 이미지를 한 번 통과시키면서 객체의 위치와 클래스를 동시에 예측하는 단일 단계 탐지 모델입니다. 속도가 빠르기 때문에 실시간 CCTV, 자율주행, 로봇 비전처럼 빠른 처리가 중요한 상황에서 많이 사용됩니다.<br><br>DETR은 Transformer를 객체 탐지에 적용한 모델입니다. CNN backbone으로 이미지 특징을 뽑은 뒤, Transformer와 object query를 사용해 객체들의 집합을 직접 예측합니다. 기존 탐지 모델에서 자주 사용하던 anchor나 NMS에 덜 의존하고, 예측된 객체와 실제 객체를 매칭해 학습하는 점이 특징입니다.<br><br>mAP는 mean Average Precision의 줄임말로, 객체 탐지 모델이 얼마나 정확하게 객체를 찾고 분류했는지 평가하는 지표입니다. 단순히 클래스만 맞히는 것이 아니라, 예측 박스가 실제 박스와 충분히 겹치는지 IoU 기준도 함께 봅니다. 여러 클래스와 threshold에서 AP를 구해 평균낸 값이 mAP입니다.`,
+`• YOLO는 빠른 단일 단계 탐지 모델입니다.<br>• DETR은 Transformer와 object query로 객체 집합을 예측합니다.<br>• mAP는 위치 정확도와 분류 성능을 함께 반영합니다.<br>• 객체 탐지는 클래스뿐 아니라 bounding box 품질도 중요합니다.`),
+"자기지도 학습":essayExp(
+`자기지도 학습은 사람이 직접 붙인 라벨 없이 데이터 자체에서 학습 신호를 만드는 방법입니다. 예를 들어 이미지의 일부를 가리고 원래 내용을 맞히게 하거나, 같은 이미지에서 만든 두 가지 증강 view는 가깝게 만들고 다른 이미지는 멀게 만들도록 학습할 수 있습니다.<br><br>대조 학습은 같은 원본에서 나온 두 view를 positive pair로 보고, 서로 다른 샘플은 negative pair로 봅니다. 모델은 positive pair의 임베딩은 가깝게, negative pair의 임베딩은 멀게 만들도록 학습합니다. 이렇게 하면 라벨 없이도 좋은 표현 벡터를 배울 수 있습니다.<br><br>마스킹 기반 학습은 입력 일부를 가린 뒤 그 부분을 복원하거나 예측하게 합니다. 이미지에서는 MAE처럼 패치를 가리고 복원할 수 있고, 언어에서는 BERT처럼 단어를 가리고 맞힐 수 있습니다. HuBERT는 음성 일부를 마스킹하고, 클러스터링으로 만든 의사 레이블을 예측하게 하여 음성 표현을 학습합니다.`,
+`• 자기지도 학습은 데이터 자체에서 정답 신호를 만듭니다.<br>• 대조 학습은 같은 샘플의 view는 가깝게, 다른 샘플은 멀게 합니다.<br>• 마스킹 기반 학습은 가려진 부분을 예측합니다.<br>• HuBERT는 음성에서 마스킹과 의사 레이블을 활용합니다.`),
+"오토인코더 이상 탐지":essayExp(
+`오토인코더는 입력을 작은 잠재 표현으로 압축했다가 다시 원래 입력처럼 복원하도록 학습하는 모델입니다. 이상 탐지에서는 정상 데이터만 또는 대부분 정상인 데이터로 오토인코더를 학습시킵니다. 그러면 모델은 정상 패턴은 잘 복원하지만, 학습 때 거의 보지 못한 이상 패턴은 잘 복원하지 못합니다.<br><br>이때 입력과 복원 결과의 차이를 재구성 오차라고 합니다. 재구성 오차가 작으면 정상에 가깝고, 오차가 크면 이상일 가능성이 높다고 판단할 수 있습니다. 임계값은 검증 데이터의 재구성 오차 분포를 보고 정할 수 있습니다. 예를 들어 정상 검증 데이터 오차의 상위 95% 지점을 기준으로 삼을 수 있습니다.<br><br>임계값을 낮추면 더 많은 데이터를 이상으로 잡기 때문에 recall은 높아질 수 있지만 오탐이 늘어납니다. 임계값을 높이면 오탐은 줄지만 실제 이상을 놓칠 수 있습니다. 따라서 문제의 비용, 안전성, 실제 라벨 일부를 함께 고려해 임계값을 정해야 합니다.`,
+`• 정상 패턴을 잘 복원하도록 학습합니다.<br>• 이상 데이터는 재구성 오차가 커지는 경향이 있습니다.<br>• 임계값은 검증 오차 분포와 도메인 비용을 고려해 정합니다.<br>• 낮은 임계값은 미탐을 줄이지만 오탐을 늘릴 수 있습니다.`),
+"모델 평가와 중첩 교차검증":essayExp(
+`테스트 셋은 모델 개발이 끝난 뒤 최종 성능을 한 번 확인하기 위한 데이터입니다. 그런데 테스트 셋 결과를 보면서 하이퍼파라미터를 계속 바꾸면, 모델이 테스트 셋에 간접적으로 맞춰집니다. 그러면 테스트 성능은 좋아 보이지만 실제 새 데이터에서는 그만큼 잘 나오지 않을 수 있습니다.<br><br>중첩 교차검증은 이런 문제를 줄이기 위해 내부 루프와 외부 루프를 나눕니다. 내부 루프에서는 여러 하이퍼파라미터 후보를 비교해 가장 좋은 설정을 고릅니다. 외부 루프에서는 그렇게 선택하는 전체 절차가 새로운 데이터에서 어느 정도 성능을 내는지 평가합니다.<br><br>실제 실험에서는 train/validation/test를 명확히 나누고, 테스트 셋은 마지막에 한 번만 사용해야 합니다. 모델 선택, 전처리 방식 선택, 하이퍼파라미터 선택은 validation이나 cross-validation으로 수행합니다. 그래야 최종 테스트 점수가 실제 일반화 성능에 더 가깝습니다.`,
+`• 테스트 셋으로 반복 튜닝하면 성능이 낙관적으로 보입니다.<br>• 내부 루프는 하이퍼파라미터 선택을 담당합니다.<br>• 외부 루프는 선택 절차 전체의 일반화 성능을 평가합니다.<br>• 테스트 셋은 최종 1회 평가에만 사용하는 것이 원칙입니다.`),
+"차원 축소와 시각화":essayExp(
+`PCA는 데이터의 분산을 가장 많이 보존하는 방향을 찾는 선형 차원 축소 방법입니다. 원래 특성들의 선형 조합으로 새로운 축을 만들고, 중요한 주성분 몇 개만 사용해 차원을 줄입니다. 그래서 계산이 비교적 빠르고, 설명 분산 비율로 어느 정도 정보를 보존했는지 확인할 수 있습니다.<br><br>t-SNE는 가까운 데이터끼리 2차원이나 3차원에서도 가깝게 보이도록 만드는 비선형 시각화 방법입니다. 복잡한 고차원 데이터의 국소 이웃 구조를 보기 좋게 만들어 군집이 있는지 살펴볼 때 유용합니다. 하지만 t-SNE 그림에서 x축, y축 자체의 의미는 거의 없고, 군집 사이의 절대 거리도 조심해서 해석해야 합니다.<br><br>차원 축소도 전처리의 한 종류이므로 데이터 누수를 조심해야 합니다. PCA 같은 모델을 전체 데이터에 fit한 뒤 train/test로 나누면 테스트 데이터 정보가 축을 만드는 과정에 들어갑니다. 따라서 학습 데이터로만 fit하고, 검증/테스트 데이터에는 transform만 적용해야 합니다.`,
+`• PCA는 분산을 보존하는 선형 차원 축소입니다.<br>• t-SNE는 국소 이웃 구조 시각화에 강한 비선형 방법입니다.<br>• t-SNE의 축과 절대 거리는 직접 해석하면 안 됩니다.<br>• 차원 축소도 학습 데이터로만 fit해야 누수를 막습니다.`),
+"PyTorch 학습 루프":essayExp(
+`PyTorch의 기본 학습 루프는 보통 <code>zero_grad</code>, forward, loss 계산, <code>backward</code>, <code>step</code> 순서로 진행됩니다. 먼저 <code>optimizer.zero_grad()</code>를 호출하는 이유는 PyTorch가 그래디언트를 자동으로 덮어쓰지 않고 누적하기 때문입니다. 이전 반복의 그래디언트를 지우지 않으면 현재 배치의 그래디언트와 섞여 잘못된 업데이트가 됩니다.<br><br>forward 단계에서는 입력을 모델에 넣어 예측값을 얻습니다. 그다음 손실 함수로 예측값과 정답의 차이를 계산합니다. <code>loss.backward()</code>는 계산 그래프를 역방향으로 따라가며 각 파라미터가 손실에 얼마나 영향을 주었는지 그래디언트를 계산합니다. 마지막으로 <code>optimizer.step()</code>이 계산된 그래디언트를 이용해 파라미터를 업데이트합니다.<br><br>또한 학습할 때는 <code>model.train()</code>, 평가할 때는 <code>model.eval()</code>을 사용해야 합니다. Dropout은 학습 중에는 일부 뉴런을 끄지만 평가 중에는 끄지 않습니다. BatchNorm도 학습 중에는 배치 통계를 사용하고 평가 중에는 저장된 running 통계를 사용합니다. 따라서 모드를 구분하지 않으면 평가 결과가 이상해질 수 있습니다.`,
+`• <code>zero_grad</code>는 누적된 그래디언트를 초기화합니다.<br>• <code>backward</code>는 그래디언트를 계산합니다.<br>• <code>step</code>은 파라미터를 업데이트합니다.<br>• Dropout과 BatchNorm 때문에 train/eval 모드 구분이 필요합니다.`),
+"생성 모델 비교":essayExp(
+`GAN은 생성자와 판별자가 서로 경쟁하면서 학습하는 생성 모델입니다. 생성자는 진짜 같은 가짜 데이터를 만들려고 하고, 판별자는 입력이 진짜인지 가짜인지 구별하려고 합니다. 이 경쟁이 잘 이루어지면 생성자는 점점 더 그럴듯한 데이터를 만들 수 있습니다.<br><br>확산 모델은 먼저 데이터에 노이즈를 점점 추가하는 정방향 과정을 만들고, 모델이 그 노이즈를 거꾸로 제거하는 역방향 과정을 학습합니다. 생성할 때는 무작위 노이즈에서 시작해 여러 단계에 걸쳐 조금씩 깨끗한 이미지나 데이터를 만들어 냅니다.<br><br>GAN은 한 번의 forward pass로 빠르게 샘플을 만들 수 있다는 장점이 있지만, 학습이 불안정하고 mode collapse가 생길 수 있습니다. mode collapse는 다양한 결과를 만들지 못하고 비슷한 결과만 반복해서 만드는 현상입니다. 확산 모델은 보통 학습이 안정적이고 품질이 좋지만, 여러 단계의 디노이징이 필요해 생성 속도가 느릴 수 있습니다.`,
+`• GAN은 생성자와 판별자의 경쟁으로 학습합니다.<br>• 확산 모델은 노이즈 추가와 노이즈 제거 과정을 사용합니다.<br>• GAN은 빠르지만 학습 불안정과 mode collapse 문제가 있습니다.<br>• 확산 모델은 품질이 좋지만 샘플링이 느릴 수 있습니다.`),
+"Transformer 위치 정보":essayExp(
+`Transformer의 self-attention은 입력 토큰들 사이의 관계를 잘 계산하지만, 토큰이 몇 번째 위치에 있는지는 스스로 알지 못합니다. 같은 단어들이 순서만 바뀌어도 attention 계산만으로는 순서를 구분하기 어렵습니다. 그래서 Transformer는 입력 임베딩에 위치 정보를 추가해야 합니다.<br><br>위치 정보를 넣는 방법에는 고정 sinusoidal positional encoding과 학습 가능한 positional embedding이 있습니다. sinusoidal 방식은 사인과 코사인 함수를 이용해 위치마다 정해진 벡터를 만들며, 학습하지 않아도 됩니다. 학습 가능한 방식은 위치마다 벡터를 파라미터로 두고 데이터에서 직접 학습합니다.<br><br>긴 문서를 처리할 때는 attention 계산량도 문제가 됩니다. 기본 self-attention은 토큰 수가 늘어날수록 계산량과 메모리가 대략 토큰 수의 제곱에 비례해 커집니다. 또한 학습 때 보지 못한 길이의 문서에서 위치 정보를 얼마나 잘 일반화하는지도 문제가 될 수 있습니다.`,
+`• attention 자체에는 순서 정보가 내장되어 있지 않습니다.<br>• 위치 인코딩/임베딩으로 토큰 위치를 알려 줍니다.<br>• sinusoidal 방식은 고정, learned 방식은 학습되는 위치 벡터입니다.<br>• 긴 문서에서는 attention 계산량과 위치 일반화가 문제가 됩니다.`),
+"실전 ML 파이프라인":essayExp(
+`실전 머신러닝 파이프라인은 먼저 데이터를 train, validation, test로 나누는 것에서 시작합니다. 그다음 결측치 대체, 범주형 인코딩, 스케일링 같은 전처리는 반드시 학습 데이터 기준으로만 fit해야 합니다. 검증과 테스트 데이터에는 학습 데이터에서 만든 기준을 transform만 해야 데이터 누수를 막을 수 있습니다.<br><br>scikit-learn에서는 전처리와 모델을 Pipeline으로 묶는 것이 좋습니다. 예를 들어 결측치 대체, One-Hot Encoding, StandardScaler, 모델 학습을 하나의 Pipeline에 넣으면 같은 순서로 재현할 수 있고, 교차검증에서도 fold별로 올바르게 fit/transform이 수행됩니다.<br><br>모델을 배포하기 전에는 정확도 하나만 보면 안 됩니다. class별 precision/recall, calibration, 입력 스키마 변화, 결측값 비율, 추론 지연시간, 메모리 사용량, 보안과 개인정보 문제를 함께 확인해야 합니다. 배포 후에는 데이터 드리프트와 성능 저하를 모니터링하고, 필요하면 재학습이나 임계값 조정을 수행합니다.`,
+`• 데이터 분할을 먼저 하고 학습 데이터 기준으로 전처리 fit을 합니다.<br>• Pipeline은 재현성과 누수 방지에 도움이 됩니다.<br>• 성능 지표뿐 아니라 지연시간, 스키마, 보안도 확인해야 합니다.<br>• 배포 후 드리프트와 성능 저하를 모니터링해야 합니다.`),
+"Softmax와 Cross Entropy 구현":essayExp(
+`Softmax는 여러 클래스에 대한 점수(logit)를 확률처럼 바꾸는 함수입니다. 먼저 각 행에서 가장 큰 값을 빼 주면 지수 함수 계산 중 값이 너무 커지는 것을 막을 수 있습니다. 그다음 <code>exp</code>를 취하고, 각 행의 합으로 나누면 각 클래스 확률의 합이 1이 됩니다.<br><pre>def cross_entropy(logits, y):
+    shifted = logits - logits.max(axis=1, keepdims=True)
+    exp_scores = np.exp(shifted)
+    probs = exp_scores / exp_scores.sum(axis=1, keepdims=True)
+    correct_probs = probs[np.arange(len(y)), y]
+    loss = -np.log(correct_probs + 1e-12).mean()
+    return loss</pre>위 코드에서 <code>y</code>는 각 샘플의 정답 클래스 인덱스입니다. <code>probs[np.arange(len(y)), y]</code>는 각 샘플에서 정답 클래스에 해당하는 확률만 골라냅니다. Cross Entropy는 정답 클래스 확률에 음의 로그를 취한 값의 평균입니다.<br><br>정답 클래스 확률이 1에 가까우면 <code>-log(확률)</code>은 0에 가까워져 손실이 작아집니다. 반대로 정답 클래스 확률이 0에 가까우면 로그값 때문에 손실이 매우 커집니다. 따라서 이 손실은 모델이 정답 클래스에 높은 확률을 주도록 학습시킵니다.`,
+`• softmax 전 max subtraction으로 수치 안정성을 확보합니다.<br>• 각 샘플의 정답 클래스 확률을 골라야 합니다.<br>• Cross Entropy는 정답 확률의 음의 로그 평균입니다.<br>• 정답 확률이 높을수록 loss는 작아집니다.`),
+"ViT와 CNN 비교":essayExp(
+`CNN은 이미지에 잘 맞는 구조적 가정을 가지고 있습니다. 작은 필터가 주변 픽셀을 보며 지역 특징을 찾고, 같은 필터를 이미지 전체에 공유합니다. 그래서 에지, 질감, 모양 같은 지역 패턴을 효율적으로 학습할 수 있습니다. 또한 물체가 조금 이동해도 비슷한 특징을 잡기 쉽습니다.<br><br>ViT는 이미지를 작은 패치로 나누고, 각 패치를 하나의 토큰처럼 임베딩하여 Transformer에 넣습니다. 문장에서 단어 토큰을 처리하듯 이미지 패치들 사이의 관계를 attention으로 계산합니다. 그래서 멀리 떨어진 영역 사이의 관계도 직접 볼 수 있습니다.<br><br>데이터가 적은 경우에는 CNN이나 사전학습 CNN이 유리한 경우가 많습니다. CNN은 이미지에 맞는 강한 inductive bias가 있기 때문입니다. 반대로 대규모 데이터로 사전학습된 ViT는 전역 관계를 잘 활용할 수 있어 매우 좋은 성능을 낼 수 있습니다. 실제로는 데이터 크기, 사전학습 여부, 계산 자원에 따라 선택해야 합니다.`,
+`• CNN은 지역성, 가중치 공유, 이동에 대한 강건성이 장점입니다.<br>• ViT는 이미지를 패치 토큰으로 보고 attention을 적용합니다.<br>• 작은 데이터에서는 CNN이 유리할 수 있습니다.<br>• 대규모 사전학습이 있으면 ViT도 강력한 성능을 냅니다.`),
+"멀티모달 모델":essayExp(
+`멀티모달 모델은 이미지, 텍스트, 오디오처럼 서로 다른 종류의 데이터를 함께 다루는 모델입니다. CLIP은 이미지와 텍스트를 같은 임베딩 공간에 놓도록 학습합니다. 서로 맞는 이미지-텍스트 쌍은 가깝게 만들고, 맞지 않는 쌍은 멀게 만드는 대조 학습을 사용합니다.<br><br>CLIP이 제로샷 이미지 분류에 활용될 수 있는 이유는 클래스 이름을 문장으로 만들어 텍스트 임베딩을 얻을 수 있기 때문입니다. 예를 들어 “a photo of a cat”, “a photo of a dog” 같은 텍스트를 만들고 이미지 임베딩과 비교합니다. 이미지와 가장 가까운 텍스트 클래스가 예측값이 됩니다. 별도의 분류기를 새로 학습하지 않아도 분류가 가능합니다.<br><br>Whisper 같은 오디오 인코더-디코더 모델은 음성을 입력받아 텍스트로 바꿀 수 있습니다. 음성 전사, 다국어 음성 인식, 음성 번역 같은 작업에 사용할 수 있습니다. 즉 오디오 신호를 이해하고 사람이 읽을 수 있는 언어로 변환하는 모델입니다.`,
+`• CLIP은 이미지와 텍스트를 같은 임베딩 공간에 맞춥니다.<br>• 대조 학습은 맞는 쌍을 가깝게, 틀린 쌍을 멀게 합니다.<br>• 제로샷 분류는 클래스 이름을 텍스트 프롬프트로 만들어 비교합니다.<br>• Whisper는 음성 전사와 번역에 사용할 수 있습니다.`),
+"배포 후 모니터링":essayExp(
+`AI 모델은 배포한 뒤에도 계속 관찰해야 합니다. 데이터 드리프트는 모델에 들어오는 입력 데이터의 분포가 학습 때와 달라지는 현상입니다. 예를 들어 쇼핑몰 고객의 연령대나 구매 패턴이 계절에 따라 달라질 수 있습니다. 개념 드리프트는 입력과 정답 사이의 관계 자체가 바뀌는 현상입니다. 예를 들어 예전에는 어떤 행동이 사기 거래의 신호였지만 시간이 지나며 사기 방식이 바뀌는 경우가 있습니다.<br><br>모니터링 지표는 여러 관점에서 봐야 합니다. 입력 데이터 관점에서는 결측치 비율, 이상값, 특성 분포, 데이터 스키마 변화를 봅니다. 모델 출력 관점에서는 예측 확률 분포, 클래스별 예측 비율, confidence 변화, 실제 라벨이 들어온 뒤의 precision/recall을 봅니다. 서비스 품질 관점에서는 응답 시간, 에러율, 사용자 피드백, 비용을 확인합니다.<br><br>성능 저하가 감지되면 새 데이터를 수집하고 라벨링해 재학습할 수 있습니다. 임계값을 조정하거나, 문제가 큰 경우 이전 안정 버전으로 롤백할 수도 있습니다. 또한 A/B 테스트로 새 모델을 일부 사용자에게만 적용해 안전하게 비교하고, 드리프트 경보 체계를 만들어 빠르게 대응해야 합니다.`,
+`• 데이터 드리프트는 입력 분포 변화입니다.<br>• 개념 드리프트는 입력과 정답의 관계 변화입니다.<br>• 입력, 출력, 서비스 품질 지표를 함께 모니터링해야 합니다.<br>• 재학습, 임계값 조정, 롤백, A/B 테스트로 대응할 수 있습니다.`)
+};
+
+const SUBJECT_1_2_ESSAY_TOPICS=[
+  "과대적합과 과소적합",
+  "NumPy K-NN 구현",
+  "Transformer Attention",
+  "BERT, GPT, PEFT",
+  "데이터 누수와 검증 설계",
+  "불균형 분류 평가",
+  "CNN과 전이학습",
+  "Seq2Seq와 Attention",
+  "군집화 방법 비교",
+  "앙상블 모델 설계",
+  "오토인코더 이상 탐지",
+  "모델 평가와 중첩 교차검증",
+  "차원 축소와 시각화",
+  "PyTorch 학습 루프",
+  "생성 모델 비교",
+  "Transformer 위치 정보",
+  "실전 ML 파이프라인",
+  "Softmax와 Cross Entropy 구현"
+];
+const ESSAY_SOURCE_BY_TOPIC=new Map();
+DESCRIPTIVE_SETS.flat().forEach(q=>{
+  if(SUBJECT_1_2_ESSAY_TOPICS.includes(q.topic)&&!ESSAY_SOURCE_BY_TOPIC.has(q.topic)){
+    ESSAY_SOURCE_BY_TOPIC.set(q.topic,q);
+  }
+});
+function buildSubjectEssaySet(roundIndex){
+  const stride=7;
+  const start=(roundIndex*3+Math.floor(roundIndex/2))%SUBJECT_1_2_ESSAY_TOPICS.length;
+  return Array.from({length:5},(_,idx)=>{
+    const topic=SUBJECT_1_2_ESSAY_TOPICS[(start+idx*stride)%SUBJECT_1_2_ESSAY_TOPICS.length];
+    const source=ESSAY_SOURCE_BY_TOPIC.get(topic);
+    return {...source,exp:DETAILED_ESSAY_EXPLANATIONS[topic]||source.exp};
+  });
+}
+ROUNDS.forEach((round,idx)=>{
+  round.data.splice(40,5,...buildSubjectEssaySet(idx));
+});
+
+ROUNDS.forEach(round=>{
+  round.data.forEach(q=>{
+    if(q.type==='essay'&&DETAILED_ESSAY_EXPLANATIONS[q.topic]){
+      q.exp=DETAILED_ESSAY_EXPLANATIONS[q.topic];
+    }
+  });
+});
+
 let currentRoundIndex=0;
 let DATA=ROUNDS[0].data;
 let cq=0;
@@ -3167,7 +3361,7 @@ let ST=emptyState();
 const STORE_PREFIX='koai2026-practice-round-';
 
 function emptyState(){return Array.from({length:TOTAL},()=>({sel:null}));}
-function roundKey(idx=currentRoundIndex){return STORE_PREFIX+ROUNDS[idx].id+'v1';}
+function roundKey(idx=currentRoundIndex){return STORE_PREFIX+ROUNDS[idx].id+'v2';}
 function currentRound(){return ROUNDS[currentRoundIndex];}
 function roundState(idx){
   try{
@@ -3414,8 +3608,8 @@ function renderQ(){
     if(q.type==='essay'){
       const wrote=isAnswered(cq);
       gb.innerHTML=wrote
-        ?'<span class="grade-icon">!</span><span><strong>서술형 답안 작성 완료.</strong> 아래 채점 포인트와 예시 답안을 기준으로 스스로 점검하세요.</span>'
-        :'<span class="grade-icon">!</span><span><strong>서술형 미작성.</strong> 제출은 완료되었으며, 아래 채점 포인트와 예시 답안을 확인할 수 있습니다.</span>';
+        ?'<span class="grade-icon">!</span><span><strong>서술형 답안 작성 완료.</strong> 아래 상세 모범답안과 핵심 확인을 기준으로 스스로 점검하세요.</span>'
+        :'<span class="grade-icon">!</span><span><strong>서술형 미작성.</strong> 제출은 완료되었으며, 아래 상세 모범답안을 보며 오답 공부를 할 수 있습니다.</span>';
     } else if(q.type==='sa'){
       gb.innerHTML=correct?'<span class="grade-icon">O</span><span><strong>정답!</strong></span>':'<span class="grade-icon">X</span><span><strong>오답.</strong></span>';
     } else {
@@ -3480,7 +3674,7 @@ function submitAll(){
   overlay.className='submit-confirm';
   overlay.innerHTML=`<div class="confirm-box">
     <h3>답안을 제출하시겠습니까?</h3>
-    <p>제출 후에는 답을 변경할 수 없습니다.<br>객관식 40문항은 자동채점되고, 서술형 5문항은 예시 답안이 공개됩니다.</p>
+    <p>제출 후에는 답을 변경할 수 없습니다.<br>객관식 40문항은 자동채점되고, 서술형 5문항은 상세 모범답안이 공개됩니다.</p>
     <div class="confirm-btns">
       <button class="cf-no" onclick="this.closest('.submit-confirm').remove()">취소</button>
       <button class="cf-yes" onclick="confirmSubmit()">제출하기</button>
