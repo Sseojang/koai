@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KOAI 정답지</title>
+<title>KOAI 2026 정답지</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
@@ -29,6 +29,10 @@ h1{font-family:'JetBrains Mono',monospace;font-size:1.45rem;font-weight:600;marg
 .round-btn{border:1px solid var(--bord);background:var(--surf);color:var(--muted);border-radius:var(--rs);
   padding:.55rem .75rem;font-family:'Noto Sans KR',sans-serif;font-weight:700;cursor:pointer}
 .round-btn:hover,.round-btn.active{border-color:var(--accent);background:var(--accent);color:#fffaf0}
+.filters{display:flex;gap:.45rem;flex-wrap:wrap;margin:-.5rem 0 1rem}
+.filter-btn{border:1px solid var(--bord);background:var(--surf);color:var(--muted);border-radius:99px;
+  padding:.42rem .72rem;font-family:inherit;font-size:.78rem;font-weight:700;cursor:pointer}
+.filter-btn.active{background:var(--accent);border-color:var(--accent);color:#fffaf0}
 .card{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:1.4rem;margin-bottom:1rem}
 .round-head{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;margin-bottom:1rem}
 .round-title{font-size:1.2rem;font-weight:700}
@@ -57,11 +61,12 @@ h1{font-family:'JetBrains Mono',monospace;font-size:1.45rem;font-weight:600;marg
 <div id="app">
   <header class="hdr">
     <div class="badge">PRIVATE ANSWER KEY</div>
-    <h1>KOAI 정답지</h1>
-    <p>학생 풀이 화면에는 연결하지 않은 관리용 정답 페이지입니다.</p>
+    <h1>KOAI 2026 정답지</h1>
+    <p>제1회~제16회와 KOAI 2026 실전 예시문제의 정답 및 상세 풀이입니다.</p>
     <a class="home" href="../index.html">홈으로 돌아가기</a>
   </header>
   <nav class="toolbar" id="round-nav"></nav>
+  <div class="filters" id="filters"></div>
   <main id="content" class="loading">정답 데이터를 불러오는 중입니다.</main>
 </div>
 
@@ -70,6 +75,7 @@ let ROUNDS=[];
 let SECTIONS=[];
 let LBL=[];
 let activeRound=0;
+let activeFilter='전체';
 
 function escapeHtml(value){
   return String(value)
@@ -78,12 +84,13 @@ function escapeHtml(value){
     .replace(/>/g,'&gt;')
     .replace(/"/g,'&quot;');
 }
-function loadPracticeData(sourceHtml){
-  const match=sourceHtml.match(/<script>([\s\S]*)<\/script>/);
-  if(!match) throw new Error('index.html에서 문제 데이터를 찾지 못했습니다.');
+function loadPracticeData(sourceHtml, realExamScript){
+  const inlineScripts=[...sourceHtml.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(match=>match[1]);
+  const mainScript=inlineScripts.find(code=>code.includes('const ROUNDS='));
+  if(!mainScript) throw new Error('index.html에서 KOAI 문제 데이터를 찾지 못했습니다.');
   const fakeElement=()=>({
     style:{},
-    classList:{add(){},remove(){}},
+    classList:{add(){},remove(){},toggle(){}},
     addEventListener(){},
     remove(){},
     closest(){return {remove(){}};},
@@ -98,20 +105,29 @@ function loadPracticeData(sourceHtml){
     querySelector(){return null;},
     body:{appendChild(){}}
   };
-  const fakeWindow={scrollTo(){}};
+  const fakeWindow={scrollTo(){},KOAI_REAL_EXAM:null};
   const fakeStorage={getItem(){return null;},setItem(){}};
   const fakeHistory={replaceState(){}};
   const fakeLocation={hash:'',pathname:'../index.html'};
-  const runner=new Function('window','document','localStorage','history','location','alert',`${match[1]}\nreturn {ROUNDS,SECTIONS,LBL};`);
+  const runner=new Function(
+    'window','document','localStorage','history','location','alert',
+    `${realExamScript}\n${mainScript}\nreturn {ROUNDS,SECTIONS,LBL};`
+  );
   return runner(fakeWindow,fakeDocument,fakeStorage,fakeHistory,fakeLocation,()=>{});
 }
 async function init(){
   try{
-    const source=await fetch('../index.html').then(res=>{
-      if(!res.ok) throw new Error('index.html을 불러오지 못했습니다.');
-      return res.text();
-    });
-    const data=loadPracticeData(source);
+    const [source,realExamScript]=await Promise.all([
+      fetch('../index.html').then(res=>{
+        if(!res.ok) throw new Error('index.html을 불러오지 못했습니다.');
+        return res.text();
+      }),
+      fetch('../koai-real-exam.js').then(res=>{
+        if(!res.ok) throw new Error('koai-real-exam.js를 불러오지 못했습니다.');
+        return res.text();
+      })
+    ]);
+    const data=loadPracticeData(source,realExamScript);
     ROUNDS=data.ROUNDS;
     SECTIONS=data.SECTIONS;
     LBL=data.LBL;
@@ -125,6 +141,17 @@ async function init(){
 function renderNav(){
   document.getElementById('round-nav').innerHTML=ROUNDS.map((round,index)=>
     `<button class="round-btn${index===activeRound?' active':''}" onclick="renderRound(${index})">${round.label}</button>`
+  ).join('');
+}
+function typeOf(q){
+  if(q.type==='essay') return '서술형';
+  if(q.type==='sa') return '주관식';
+  return '객관식';
+}
+function renderFilters(){
+  const types=['전체','객관식','주관식','서술형'];
+  document.getElementById('filters').innerHTML=types.map(type=>
+    `<button class="filter-btn${type===activeFilter?' active':''}" onclick="setFilter('${type}')">${type}</button>`
   ).join('');
 }
 function answerFor(q){
@@ -145,7 +172,9 @@ function renderQuestionList(items, title){
 }
 function renderRound(index){
   activeRound=index;
+  activeFilter='전체';
   renderNav();
+  renderFilters();
   const round=ROUNDS[index];
   const withIndex=round.data.map((q,i)=>({q,index:i}));
   const mc=withIndex.filter(item=>item.q.type!=='sa'&&item.q.type!=='essay');
@@ -162,6 +191,31 @@ function renderRound(index){
     ${renderQuestionList(mc,'객관식 정답')}
     ${renderQuestionList(sa,'주관식 정답')}
     ${renderQuestionList(essay,'서술형 모범답안')}
+  </article>`;
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function setFilter(type){
+  activeFilter=type;
+  renderNav();
+  renderFilters();
+  const round=ROUNDS[activeRound];
+  const filtered=round.data
+    .map((q,index)=>({q,index}))
+    .filter(item=>type==='전체'||typeOf(item.q)===type);
+  const counts={
+    객관식:round.data.filter(q=>typeOf(q)==='객관식').length,
+    주관식:round.data.filter(q=>typeOf(q)==='주관식').length,
+    서술형:round.data.filter(q=>typeOf(q)==='서술형').length
+  };
+  document.getElementById('content').className='';
+  document.getElementById('content').innerHTML=`<article class="card">
+    <div class="round-head">
+      <div>
+        <div class="round-title">${round.title}</div>
+        <div class="round-meta">객관식 ${counts.객관식} · 주관식 ${counts.주관식} · 서술형 ${counts.서술형}</div>
+      </div>
+    </div>
+    ${renderQuestionList(filtered,type==='전체'?'전체 정답 및 풀이':`${type} 정답 및 풀이`)}
   </article>`;
   window.scrollTo({top:0,behavior:'smooth'});
 }
