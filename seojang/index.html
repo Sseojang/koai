@@ -3,169 +3,173 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>KOAI 정답지</title>
+<title>알고리즘 기말고사 정답지</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 <style>
-:root{
-  --bg:#f5f1e8;--surf:#fffaf0;--surf2:#f0ebe0;--bord:#d8cfbd;
-  --text:#20201d;--muted:#6e6a60;--accent:#1d6b5f;--acc2:#2a8a7a;
-  --ok:#1c6b3e;--hint:#b7892d;--r:12px;--rs:8px;
-}
+:root{--bg:#f5f1e8;--surf:#fffaf0;--surf2:#f0ebe0;--bord:#d8cfbd;--text:#20201d;--muted:#6e6a60;--accent:#1d6b5f;--acc2:#2a8a7a;--r:12px;--rs:8px}
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
-  background:
-    linear-gradient(90deg, rgba(32,32,29,.04) 1px, transparent 1px),
-    linear-gradient(rgba(32,32,29,.035) 1px, transparent 1px),
-    var(--bg);
-  background-size:28px 28px;color:var(--text);line-height:1.75;font-size:15px}
+body{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;background:linear-gradient(90deg,rgba(32,32,29,.04) 1px,transparent 1px),linear-gradient(rgba(32,32,29,.035) 1px,transparent 1px),var(--bg);background-size:28px 28px;color:var(--text);line-height:1.78;font-size:15px}
 #app{max-width:1040px;margin:0 auto;padding:2rem 1.25rem 5rem}
-.hdr{border-bottom:1px solid var(--bord);padding:2rem 0 1.5rem;margin-bottom:1.5rem}
-.badge{display:inline-flex;color:var(--acc2);background:rgba(29,107,95,.12);border:1px solid rgba(29,107,95,.3);
-  padding:.25rem .7rem;border-radius:99px;font-size:.72rem;font-weight:700;letter-spacing:.05em;margin-bottom:.65rem}
-h1{font-family:'JetBrains Mono',monospace;font-size:1.45rem;font-weight:600;margin-bottom:.35rem}
+.hdr{border-bottom:1px solid var(--bord);padding:2.2rem 0 1.4rem;margin-bottom:1.35rem}
+.badge{display:inline-flex;color:var(--acc2);background:rgba(29,107,95,.12);border:1px solid rgba(29,107,95,.3);padding:.28rem .78rem;border-radius:99px;font-size:.72rem;font-weight:800;letter-spacing:.05em;margin-bottom:.7rem}
+h1{font-family:'JetBrains Mono',monospace;font-size:1.55rem;font-weight:700;margin-bottom:.35rem}
 .hdr p{color:var(--muted);font-size:.9rem}
-.toolbar{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem}
-.round-btn{border:1px solid var(--bord);background:var(--surf);color:var(--muted);border-radius:var(--rs);
-  padding:.55rem .75rem;font-family:'Noto Sans KR',sans-serif;font-weight:700;cursor:pointer}
-.round-btn:hover,.round-btn.active{border-color:var(--accent);background:var(--accent);color:#fffaf0}
-.card{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:1.4rem;margin-bottom:1rem}
-.round-head{display:flex;justify-content:space-between;gap:1rem;align-items:flex-start;margin-bottom:1rem}
-.round-title{font-size:1.2rem;font-weight:700}
-.round-meta{font-family:'JetBrains Mono',monospace;color:var(--muted);font-size:.82rem}
-.group{margin-top:1rem}
-.group h2{font-size:.95rem;color:var(--acc2);margin-bottom:.6rem}
-.answer-item{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--rs);padding:1rem;margin-bottom:.7rem}
-.q-line{font-weight:700;margin-bottom:.45rem}
-.q-line span{font-family:'JetBrains Mono',monospace;color:var(--accent);margin-right:.35rem}
-.answer{color:var(--ok);font-weight:700;margin:.35rem 0}
-.answer code,.question code{font-family:'JetBrains Mono',monospace;background:rgba(32,32,29,.08);padding:.08rem .3rem;border-radius:4px}
-.question{color:var(--text);font-size:.9rem;margin-bottom:.5rem}
-.question pre,.explain pre{background:#f7f2e8;border:1px solid var(--bord);border-radius:var(--rs);
-  padding:.75rem 1rem;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:.82rem;line-height:1.65;margin:.5rem 0;color:#23524b}
-.explain{font-size:.88rem;color:var(--text);border-top:1px dashed var(--bord);padding-top:.6rem;margin-top:.6rem}
+.home{display:inline-flex;margin-top:.8rem;color:var(--accent);font-weight:800;text-decoration:none}
+.round-nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.75rem;margin-bottom:1rem}
+.round-btn{border:1px solid var(--bord);background:var(--surf);border-radius:var(--r);padding:1rem;text-align:left;color:var(--text);font-family:inherit;font-weight:800;cursor:pointer}
+.round-btn span{display:block;font-size:.74rem;color:var(--muted);font-weight:700;margin-top:.15rem}
+.round-btn.active{background:var(--accent);border-color:var(--accent);color:#fffaf0}
+.round-btn.active span{color:#fffaf0;opacity:.82}
+.tools{display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1rem}
+.filter{border:1px solid var(--bord);background:var(--surf);border-radius:99px;padding:.45rem .75rem;color:var(--muted);font-family:inherit;font-size:.78rem;font-weight:800;cursor:pointer}
+.filter.active{background:var(--accent);border-color:var(--accent);color:#fffaf0}
+.card{background:var(--surf);border:1px solid var(--bord);border-radius:var(--r);padding:1.35rem;margin-bottom:1rem}
+.round-title{display:flex;align-items:flex-start;justify-content:space-between;gap:1rem;margin-bottom:1rem}
+.round-title h2{font-size:1.15rem}
+.round-title p{font-family:'JetBrains Mono',monospace;font-size:.82rem;color:var(--muted)}
+.answer-item{background:var(--surf2);border:1px solid var(--bord);border-radius:var(--rs);padding:1rem;margin-bottom:.8rem}
+.q-head{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;margin-bottom:.7rem}
+.q-num{font-family:'JetBrains Mono',monospace;font-size:.78rem;font-weight:800;background:var(--accent);color:#fffaf0;border-radius:var(--rs);padding:.2rem .55rem}
+.q-cat{font-size:.74rem;font-weight:800;color:var(--acc2);border:1px solid rgba(29,107,95,.25);background:rgba(29,107,95,.1);border-radius:99px;padding:.12rem .5rem}
+.q-score{font-size:.72rem;color:var(--muted);font-weight:800}
+.q-title{font-weight:800;margin-bottom:.45rem}
+.section-label{font-size:.72rem;font-weight:900;color:var(--acc2);letter-spacing:.06em;margin:.7rem 0 .2rem;text-transform:uppercase}
+.md{font-size:.92rem;line-height:1.8}
+.md h3{font-size:.98rem;color:var(--acc2);margin:.8rem 0 .35rem}
+.md p{margin:.45rem 0}
+.md ul,.md ol{padding-left:1.2rem;margin:.45rem 0}
+.md li{margin:.2rem 0}
+.md code{font-family:'JetBrains Mono',monospace;background:rgba(32,32,29,.08);border-radius:4px;padding:.08rem .3rem;color:var(--acc2)}
+.md pre{background:#f8f2e8;border:1px solid var(--bord);border-left:4px solid rgba(29,107,95,.35);border-radius:var(--rs);padding:.75rem .9rem;overflow-x:auto;font-family:'JetBrains Mono',monospace;font-size:.8rem;line-height:1.6;margin:.55rem 0;color:#2f3a36}
+.md table{border-collapse:collapse;margin:.65rem 0;font-size:.84rem;min-width:460px}
+.md th,.md td{border:1px solid var(--bord);padding:.35rem .65rem;text-align:center}
+.md th{background:#e9e2d4;color:var(--acc2)}
+.md td{font-family:'JetBrains Mono',monospace;font-size:.8rem}
+.table-scroll{overflow-x:auto}
+.answer-box{border-top:1px dashed var(--bord);margin-top:.85rem;padding-top:.75rem;background:rgba(29,107,95,.035);border-radius:var(--rs)}
 .loading,.error{background:var(--surf);border:1px dashed var(--bord);border-radius:var(--r);padding:1.2rem;color:var(--muted)}
 .error{border-color:#a33d2d;color:#a33d2d}
-.home{display:inline-flex;margin-top:1rem;color:var(--accent);font-weight:700;text-decoration:none}
-@media(max-width:640px){
-  #app{padding:1rem .8rem 4rem}
-  .round-head{display:block}
-}
+@media(max-width:720px){#app{padding:1rem .85rem 4rem}.round-nav{grid-template-columns:1fr}.round-title{display:block}}
 </style>
 </head>
 <body>
 <div id="app">
   <header class="hdr">
     <div class="badge">PRIVATE ANSWER KEY</div>
-    <h1>KOAI 정답지</h1>
-    <p>학생 풀이 화면에는 연결하지 않은 관리용 정답 페이지입니다.</p>
-    <a class="home" href="../index.html">홈으로 돌아가기</a>
+    <h1>알고리즘 기말고사 정답지</h1>
+    <p>학생 풀이 화면과 분리된 관리용 정답 페이지입니다. 현재 1~6회차 데이터를 자동으로 불러옵니다.</p>
+    <a class="home" href="../algorithm-final.html">학생 풀이 페이지로 이동</a>
   </header>
-  <nav class="toolbar" id="round-nav"></nav>
+  <nav class="round-nav" id="round-nav"></nav>
+  <div class="tools" id="filters"></div>
   <main id="content" class="loading">정답 데이터를 불러오는 중입니다.</main>
 </div>
 
 <script>
-let ROUNDS=[];
-let SECTIONS=[];
-let LBL=[];
-let activeRound=0;
+let ROUNDS = [];
+let activeRound = 0;
+let activeFilter = '전체';
+let parseProblems;
+let renderMarkdown;
 
 function escapeHtml(value){
-  return String(value)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
+  return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
-function loadPracticeData(sourceHtml){
-  const match=sourceHtml.match(/<script>([\s\S]*)<\/script>/);
-  if(!match) throw new Error('index.html에서 문제 데이터를 찾지 못했습니다.');
-  const fakeElement=()=>({
-    style:{},
-    classList:{add(){},remove(){}},
-    addEventListener(){},
-    remove(){},
-    closest(){return {remove(){}};},
-    textContent:'',
-    innerHTML:'',
-    disabled:false
+
+async function loadData(){
+  const html = await fetch('../algorithm-final.html').then(function(res){
+    if(!res.ok) throw new Error('algorithm-final.html을 불러오지 못했습니다.');
+    return res.text();
   });
-  const fakeDocument={
-    title:'',
-    getElementById:fakeElement,
-    createElement:fakeElement,
-    querySelector(){return null;},
-    body:{appendChild(){}}
+  const extra = await fetch('../algorithm-final-extra-rounds.js').then(function(res){
+    if(!res.ok) throw new Error('algorithm-final-extra-rounds.js를 불러오지 못했습니다.');
+    return res.text();
+  });
+  const inline = (html.match(/<script>([\s\S]*?)<\/script>/)||[])[1];
+  if(!inline) throw new Error('학생 페이지에서 문제 스크립트를 찾지 못했습니다.');
+
+  const fakeElement = function(){
+    return {
+      style:{},
+      classList:{toggle(){},add(){},remove(){}},
+      textContent:'',
+      innerHTML:'',
+      value:'',
+      disabled:false,
+      addEventListener(){},
+      remove(){},
+      closest(){return {remove(){}}}
+    };
   };
-  const fakeWindow={scrollTo(){}};
-  const fakeStorage={getItem(){return null;},setItem(){}};
-  const fakeHistory={replaceState(){}};
-  const fakeLocation={hash:'',pathname:'../index.html'};
-  const runner=new Function('window','document','localStorage','history','location','alert',`${match[1]}\nreturn {ROUNDS,SECTIONS,LBL};`);
-  return runner(fakeWindow,fakeDocument,fakeStorage,fakeHistory,fakeLocation,()=>{});
+  const fakeDocument = {getElementById:fakeElement,createElement:fakeElement,body:{appendChild(){}}};
+  const fakeWindow = {addEventListener(){},scrollTo(){},ALGORITHM_FINAL_ROUNDS:[]};
+  const fakeStorage = {getItem(){return null},setItem(){}};
+  const runner = new Function(
+    'window','document','localStorage','history','location',
+    inline + '\n' + extra + '\nreturn {rounds: window.ALGORITHM_FINAL_ROUNDS, parseProblems, renderMarkdown};'
+  );
+  return runner(fakeWindow,fakeDocument,fakeStorage,{replaceState(){}},{hash:'',pathname:'../algorithm-final.html'});
 }
-async function init(){
-  try{
-    const source=await fetch('../index.html').then(res=>{
-      if(!res.ok) throw new Error('index.html을 불러오지 못했습니다.');
-      return res.text();
-    });
-    const data=loadPracticeData(source);
-    ROUNDS=data.ROUNDS;
-    SECTIONS=data.SECTIONS;
-    LBL=data.LBL;
-    renderNav();
-    renderRound(0);
-  }catch(error){
-    document.getElementById('content').className='error';
-    document.getElementById('content').innerHTML=`정답 데이터를 불러오지 못했습니다.<br>이 페이지는 정적 서버에서 <code>/seojang/</code> 경로로 열었을 때 가장 안정적으로 동작합니다.<br><br>${escapeHtml(error.message)}`;
-  }
+
+function categories(problems){
+  return ['전체'].concat(Array.from(new Set(problems.map(function(p){return p.category}))));
 }
+
 function renderNav(){
-  document.getElementById('round-nav').innerHTML=ROUNDS.map((round,index)=>
-    `<button class="round-btn${index===activeRound?' active':''}" onclick="renderRound(${index})">${round.label}</button>`
-  ).join('');
+  document.getElementById('round-nav').innerHTML = ROUNDS.map(function(round,index){
+    const count = parseProblems(round.md).length;
+    return '<button class="round-btn '+(index===activeRound?'active':'')+'" onclick="selectRound('+index+')">'+escapeHtml(round.label)+'<span>'+count+'문항 · 상세 풀이</span></button>';
+  }).join('');
 }
-function answerFor(q){
-  if(q.type==='sa') return q.ans.map(escapeHtml).join(' / ');
-  if(q.type==='essay') return '상세 모범답안 참고';
-  return `${LBL[q.ans]} ${q.opts[q.ans]}`;
+
+function renderFilters(problems){
+  document.getElementById('filters').innerHTML = categories(problems).map(function(cat){
+    return '<button class="filter '+(cat===activeFilter?'active':'')+'" onclick="selectFilter(\''+cat.replace(/'/g,'\\\'')+'\')">'+escapeHtml(cat)+'</button>';
+  }).join('');
 }
-function renderQuestionList(items, title){
-  return `<section class="group">
-    <h2>${title}</h2>
-    ${items.map(({q,index})=>`<article class="answer-item">
-      <div class="q-line"><span>Q${index+1}</span>${escapeHtml(q.topic)}</div>
-      <div class="question">${q.q}</div>
-      <div class="answer">정답: ${answerFor(q)}</div>
-      <div class="explain">${q.exp}</div>
-    </article>`).join('')}
-  </section>`;
-}
-function renderRound(index){
-  activeRound=index;
+
+function renderRound(){
+  const round = ROUNDS[activeRound];
+  const problems = parseProblems(round.md);
+  const filtered = activeFilter === '전체' ? problems : problems.filter(function(p){return p.category === activeFilter});
   renderNav();
-  const round=ROUNDS[index];
-  const withIndex=round.data.map((q,i)=>({q,index:i}));
-  const mc=withIndex.filter(item=>item.q.type!=='sa'&&item.q.type!=='essay');
-  const sa=withIndex.filter(item=>item.q.type==='sa');
-  const essay=withIndex.filter(item=>item.q.type==='essay');
-  document.getElementById('content').className='';
-  document.getElementById('content').innerHTML=`<article class="card">
-    <div class="round-head">
-      <div>
-        <div class="round-title">${round.title}</div>
-        <div class="round-meta">객관식 ${mc.length} · 주관식 ${sa.length} · 서술형 ${essay.length}</div>
-      </div>
-    </div>
-    ${renderQuestionList(mc,'객관식 정답')}
-    ${renderQuestionList(sa,'주관식 정답')}
-    ${renderQuestionList(essay,'서술형 모범답안')}
-  </article>`;
+  renderFilters(problems);
+  document.getElementById('content').className = '';
+  document.getElementById('content').innerHTML =
+    '<section class="card"><div class="round-title"><div><h2>'+escapeHtml(round.title)+'</h2><p>'+filtered.length+' / '+problems.length+'문항 표시</p></div></div>'+
+    filtered.map(function(p){
+      return '<article class="answer-item">'+
+        '<div class="q-head"><span class="q-num">Q'+p.num+'</span><span class="q-cat">'+escapeHtml(p.category)+'</span><span class="q-score">'+p.score+'점</span></div>'+
+        '<div class="q-title">'+escapeHtml(p.title)+'</div>'+
+        '<div class="section-label">문제</div><div class="md">'+renderMarkdown(p.question)+'</div>'+
+        '<div class="answer-box"><div class="section-label">정답 및 상세 풀이</div><div class="md">'+renderMarkdown(p.answer || '등록된 정답이 없습니다.')+'</div></div>'+
+      '</article>';
+    }).join('')+
+    '</section>';
+}
+
+function selectRound(index){
+  activeRound = index;
+  activeFilter = '전체';
+  renderRound();
   window.scrollTo({top:0,behavior:'smooth'});
 }
-window.onload=init;
+
+function selectFilter(cat){
+  activeFilter = cat;
+  renderRound();
+}
+
+loadData().then(function(data){
+  ROUNDS = data.rounds;
+  parseProblems = data.parseProblems;
+  renderMarkdown = data.renderMarkdown;
+  renderRound();
+}).catch(function(error){
+  document.getElementById('content').className = 'error';
+  document.getElementById('content').innerHTML = '정답 데이터를 불러오지 못했습니다.<br>정적 서버에서 <code>/seojang/</code> 경로로 열어 주세요.<br><br>'+escapeHtml(error.message);
+});
 </script>
 </body>
 </html>

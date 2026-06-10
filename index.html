@@ -284,7 +284,7 @@ body{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif
   </div>
 
   <section id="dashboard-view" class="view">
-    <p class="dashboard-intro"><strong>* 각 회차는 객관식 20문항, 주관식 20문항, 서술형 5문항으로 구성되어 있습니다.</strong></p>
+    <p class="dashboard-intro"><strong>일반 회차는 객관식 20문항, 주관식 20문항, 서술형 5문항으로 구성됩니다. KOAI 2026 실전 예시문제는 원문 구성인 선택형 60문항과 서술형 5문항을 그대로 제공합니다.</strong></p>
     <div class="round-grid" id="round-grid"></div>
   </section>
 
@@ -337,9 +337,10 @@ body{font-family:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif
   </section>
 </div>
 
+<script src="koai-real-exam.js"></script>
 <script>
 const LBL=['①','②','③','④'];
-const TOTAL=45;
+let TOTAL=45;
 const DIFF_LABEL={1:'★☆☆ 기초',2:'★★☆ 보통',3:'★★★ 심화'};
 const DIFF_CLS={1:'diff-1',2:'diff-2',3:'diff-3'};
 
@@ -4279,26 +4280,31 @@ function applyMixedQuestionLayout(){
   });
 }
 applyMixedQuestionLayout();
+if(window.KOAI_REAL_EXAM) ROUNDS.push(window.KOAI_REAL_EXAM);
 
 let currentRoundIndex=0;
 let DATA=ROUNDS[0].data;
+let ACTIVE_SECTIONS=ROUNDS[0].sections||SECTIONS;
 let cq=0;
 let submitted=false;
 let ST=emptyState();
 const STORE_PREFIX='koai2026-practice-round-';
 
-function emptyState(){return Array.from({length:TOTAL},()=>({sel:null}));}
+function emptyState(total=TOTAL){return Array.from({length:total},()=>({sel:null}));}
 function roundKey(idx=currentRoundIndex){return STORE_PREFIX+ROUNDS[idx].id+'v7';}
 function currentRound(){return ROUNDS[currentRoundIndex];}
 function roundState(idx){
+  const expected=ROUNDS[idx].data.length;
   try{
     const d=JSON.parse(localStorage.getItem(roundKey(idx)));
-    if(d&&Array.isArray(d.ST)&&d.ST.length===TOTAL) return d;
+    if(d&&Array.isArray(d.ST)&&d.ST.length===expected) return d;
   }catch(e){}
-  return {cq:0,submitted:false,ST:emptyState()};
+  return {cq:0,submitted:false,ST:emptyState(expected)};
 }
 function saveState(){localStorage.setItem(roundKey(),JSON.stringify({cq,submitted,ST}));}
 function loadState(){
+  TOTAL=DATA.length;
+  ACTIVE_SECTIONS=currentRound().sections||SECTIONS;
   const d=roundState(currentRoundIndex);
   cq=Number.isInteger(d.cq)?Math.max(0,Math.min(TOTAL-1,d.cq)):0;
   ST=d.ST;
@@ -4340,20 +4346,28 @@ function essayAnswered(){return ST.filter((_,i)=>isEssay(i)&&isAnswered(i)).leng
 function calcProgress(idx){
   const prevData=DATA;
   const prevST=ST;
+  const prevTotal=TOTAL;
+  const prevSections=ACTIVE_SECTIONS;
   DATA=ROUNDS[idx].data;
+  TOTAL=DATA.length;
+  ACTIVE_SECTIONS=ROUNDS[idx].sections||SECTIONS;
   ST=roundState(idx).ST;
   const answered=ST.filter((_,i)=>isAnswered(i)).length;
   const ok=autoCorrect();
   const essay=essayAnswered();
   const auto=autoTotal();
+  const total=TOTAL;
+  const essays=essayTotal();
   const saved=roundState(idx);
   DATA=prevData;
   ST=prevST;
-  return {answered,ok,essay,auto,submitted:!!saved.submitted};
+  TOTAL=prevTotal;
+  ACTIVE_SECTIONS=prevSections;
+  return {answered,ok,essay,auto,total,essays,submitted:!!saved.submitted};
 }
 function getSectionOf(qi){
-  for(const s of SECTIONS) if(qi>=s.start&&qi<s.start+s.count) return s;
-  return SECTIONS[0];
+  for(const s of ACTIVE_SECTIONS) if(qi>=s.start&&qi<s.start+s.count) return s;
+  return ACTIVE_SECTIONS[0];
 }
 function escapeAttr(value){return String(value).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 function escapeText(value){return String(value).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
@@ -4385,6 +4399,8 @@ function showDashboard(){
 function startRound(idx, view){
   currentRoundIndex=idx;
   DATA=currentRound().data;
+  TOTAL=DATA.length;
+  ACTIVE_SECTIONS=currentRound().sections||SECTIONS;
   loadState();
   document.getElementById('dashboard-view').style.display='none';
   document.getElementById('quiz-shell').style.display='';
@@ -4399,7 +4415,7 @@ function startRound(idx, view){
 
 function updateRoundChrome(){
   document.getElementById('page-title').textContent=currentRound().title;
-  document.getElementById('page-subtitle').textContent='객관식 20문항 + 주관식 20문항 자동채점 + 서술형 5문항 모범답안 확인 · 45문항';
+  document.getElementById('page-subtitle').textContent=currentRound().subtitle||'객관식 20문항 + 주관식 20문항 자동채점 + 서술형 5문항 모범답안 확인 · 45문항';
   document.getElementById('round-title').textContent=currentRound().label;
   document.title=currentRound().title;
   updateRoundStateText();
@@ -4414,10 +4430,10 @@ function renderDashboard(){
   const states=ROUNDS.map((_,idx)=>calcProgress(idx));
   document.getElementById('round-grid').innerHTML=ROUNDS.map((r,idx)=>{
     const s=states[idx];
-    const pct=s.submitted?Math.round(s.ok/s.auto*100):Math.round(s.answered/TOTAL*100);
+    const pct=s.submitted?Math.round(s.ok/s.auto*100):Math.round(s.answered/s.total*100);
     const badge=s.submitted?`자동채점 ${s.ok}/${s.auto}`:s.answered>0?'진행 중':'시작 전';
     const action=s.submitted?'결과 보기':s.answered>0?'이어 풀기':'시작';
-    const desc=s.submitted?`자동채점 정답률 ${pct}% · 서술형 ${s.essay}/5문항 작성`:`45문제 중 ${s.answered}개 풀이`;
+    const desc=s.submitted?`자동채점 정답률 ${pct}% · 서술형 ${s.essay}/${s.essays}문항 작성`:`${s.total}문제 중 ${s.answered}개 풀이`;
     return `<article class="round-card${s.submitted?' done':''}${idx===currentRoundIndex?' active':''}" role="button" tabindex="0" onclick="startRound(${idx})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();startRound(${idx})}">
       <div class="round-head"><span class="round-title">${r.label}</span><span class="round-badge">${badge}</span></div>
       <div class="round-desc">${desc}</div>
@@ -4443,7 +4459,7 @@ function openRoundMenu(){
 
 function renderTabs(){
   const el=document.getElementById('tabs');
-  el.innerHTML=SECTIONS.map((s,i)=>{
+  el.innerHTML=ACTIVE_SECTIONS.map((s,i)=>{
     const active=getSectionOf(cq)===s;
     return `<button class="tab${active?' active':''}" onclick="jumpToSection(${i})">
       ${s.name}<span class="tab-score" id="tab-sc-${i}"></span>
@@ -4451,7 +4467,7 @@ function renderTabs(){
   }).join('');
 }
 function updateTabScores(){
-  SECTIONS.forEach((s,i)=>{
+  ACTIVE_SECTIONS.forEach((s,i)=>{
     const el=document.getElementById('tab-sc-'+i);
     if(!el) return;
     if(submitted){
@@ -4471,7 +4487,7 @@ function updateTabScores(){
     }
   });
 }
-function jumpToSection(si){cq=SECTIONS[si].start;saveState();renderAll();}
+function jumpToSection(si){cq=ACTIVE_SECTIONS[si].start;saveState();renderAll();}
 
 function renderAll(){
   updateRoundChrome();
@@ -4587,7 +4603,7 @@ function renderSubmitArea(){
   } else {
     btn.disabled=true;
     btn.classList.remove('ready');
-    btn.textContent=`객관식·주관식 ${remaining}문항 미응답`;
+    btn.textContent=`자동채점 ${remaining}문항 미응답`;
   }
 }
 function selectOpt(i){
@@ -4611,7 +4627,7 @@ function submitAll(){
   overlay.className='submit-confirm';
   overlay.innerHTML=`<div class="confirm-box">
     <h3>답안을 제출하시겠습니까?</h3>
-    <p>제출 후에는 답을 변경할 수 없습니다.<br>객관식 20문항과 주관식 20문항은 자동채점되고, 서술형 5문항은 상세 모범답안이 공개됩니다.</p>
+    <p>제출 후에는 답을 변경할 수 없습니다.<br>자동채점 ${autoTotal()}문항은 즉시 채점되고, 서술형 ${essayTotal()}문항은 상세 모범답안이 공개됩니다.</p>
     <div class="confirm-btns">
       <button class="cf-no" onclick="this.closest('.submit-confirm').remove()">취소</button>
       <button class="cf-yes" onclick="confirmSubmit()">제출하기</button>
@@ -4651,7 +4667,7 @@ function showScore(){
     <div class="score-sub">자동채점 정답률 ${pct}% · 서술형 ${written} / ${essayTotal()}문항 작성 · KOAI 2026 ${currentRound().label}</div>
     <div class="score-bar-wrap"><div class="score-bar-fill" style="width:${pct}%;background:${c}"></div></div>
     <div class="section-scores">
-      ${SECTIONS.map(sec=>{
+      ${ACTIVE_SECTIONS.map(sec=>{
         let secOk=0;
         let secWritten=0;
         let essayOnly=true;
